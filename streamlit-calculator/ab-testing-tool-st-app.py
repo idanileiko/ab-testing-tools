@@ -21,7 +21,7 @@ col1, col2, col3 = st.columns(3)
 with col1:
     st.write("")
 with col2:
-    st.image("ab-testing.png")
+    st.image("https://github.com/idanileiko/ab-testing-tools/blob/main/streamlit-calculator/ab-testing.png")
 with col3:
     st.write("")
 
