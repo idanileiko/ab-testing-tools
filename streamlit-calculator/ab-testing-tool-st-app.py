@@ -71,6 +71,10 @@ with tabs[0]:
     desired_rate = st.number_input(label = "Desired conversion rate", value = 0.150, min_value = 0.00, max_value = 1.00, format="%.3f")
     st.markdown("*The desired conversion rate that would show that the experimental change was successful.*")
     st.write("---")
+
+    n_groups = st.number_input(label = "Desired conversion rate", value = 2, min_value = 2, max_value = 8, step = 1)
+    st.markdown("*The number of design variations you want to test, including the control group.*")
+    st.write("---")
     
     significance_level = st.number_input(label = "Significance level", value = .05, min_value = 0.0, max_value = 0.5)
     st.markdown("*The maximum risk of making a false positive conclusion that is reasonable to accept. Smaller values are more conservative \
@@ -102,7 +106,7 @@ with tabs[0]:
 
         # round up to nearest whole number
         sample_size = m.ceil(sample_size)
-        total_users = sample_size * 2 #number_groups
+        total_users = sample_size * n_groups
             
         st.success(f" The required sample size is at least {sample_size} users per group for a total of at least {total_users} users.")
         
