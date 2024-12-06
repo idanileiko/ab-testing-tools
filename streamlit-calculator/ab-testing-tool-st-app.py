@@ -72,7 +72,7 @@ with tabs[0]:
     st.markdown("*The desired conversion rate that would show that the experimental change was successful.*")
     st.write("---")
 
-    n_groups = st.number_input(label = "Desired conversion rate", value = 2, min_value = 2, max_value = 8, step = 1)
+    n_groups = st.number_input(label = "Number of Groups", value = 2, min_value = 2, max_value = 8, step = 1)
     st.markdown("*The number of design variations you want to test, including the control group.*")
     st.write("---")
     
