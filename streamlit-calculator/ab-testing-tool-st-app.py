@@ -64,11 +64,11 @@ with tabs[0]:
     #st.write("---")
     # can't make number of groups work yet in the a/b test result since it can't auto-populate number inputs
     
-    current_rate = st.number_input(label = "Current conversion rate", value = 0.100, min_value = 0.00, max_value = 1.00)
+    current_rate = st.number_input(label = "Current conversion rate", value = 0.100, min_value = 0.00, max_value = 1.00, format="%.3f")
     st.markdown("*The preexisting conversion rate of the population for the metric of interest. It's expected the control group will exhibit this rate in the experiment.*")
     st.write("---")
     
-    desired_rate = st.number_input(label = "Desired conversion rate", value = 0.150, min_value = 0.00, max_value = 1.00)
+    desired_rate = st.number_input(label = "Desired conversion rate", value = 0.150, min_value = 0.00, max_value = 1.00, format="%.3f")
     st.markdown("*The desired conversion rate that would show that the experimental change was successful.*")
     st.write("---")
     
