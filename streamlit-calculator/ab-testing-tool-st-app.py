@@ -132,7 +132,7 @@ with tabs[1]:
     st.write('---')
     
     st.markdown("Test group")
-    successes_test = st.number_input(label = "Number of successes in test group", value = 130, min_value = 0)
+    successes_test = st.number_input(label = "Number of successes in test group", value = 80, min_value = 0)
     users_test = st.number_input(label = "Number of users in test group", value = 681, min_value = 0)
     st.write('---')
         
@@ -171,7 +171,7 @@ with tabs[1]:
         plt.ylabel('Conversion Rate (%)')
         st.pyplot(fig)
   
-    if st.button("Calculate Result"):
+    if st.button("Calculate Frequentist Result"):
         ab_test_calc()
 
 with tabs[2]:
@@ -185,7 +185,7 @@ with tabs[2]:
     st.write('---')
     
     st.markdown("Test group")
-    success_b = st.number_input(label = "Number of successes in group B", value = 130, min_value = 0)
+    success_b = st.number_input(label = "Number of successes in group B", value = 80, min_value = 0)
     trials_b = st.number_input(label = "Number of users in group B", value = 681, min_value = 0)
     st.write('---')
 
@@ -261,7 +261,7 @@ with tabs[2]:
 
         st.pyplot(fig)
 
-    if st.button("Calculate Result"):
+    if st.button("Calculate Bayesian Result"):
         bf_calc()
 
 with tabs[3]:
