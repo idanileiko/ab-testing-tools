@@ -171,7 +171,7 @@ with tabs[1]:
         plt.ylabel('Conversion Rate (%)')
         st.pyplot(fig)
   
-    if st.button("Calculate Frequentist Result"):
+    if st.button("Calculate Result"):
         ab_test_calc()
 
 with tabs[2]:
@@ -244,21 +244,24 @@ with tabs[2]:
         upper_bound = max(posterior_a.ppf(0.999), posterior_b.ppf(0.999))
         x = np.linspace(lower_bound, upper_bound, 1000)
 
-        plt.plot(x, posterior_a.pdf(x), label='Posterior A', alpha=0.7)
-        plt.plot(x, posterior_b.pdf(x), label='Posterior B', alpha=0.7)
-        plt.axvline(ci_a[0], color='blue', linestyle='--', alpha=0.5)
-        plt.axvline(ci_a[1], color='blue', linestyle='--', alpha=0.5)
-        plt.axvline(ci_b[0], color='orange', linestyle='--', alpha=0.5)
-        plt.axvline(ci_b[1], color='orange', linestyle='--', alpha=0.5)
-        plt.title('Posterior Distributions with Credible Intervals')
-        plt.xlabel('Conversion Rate')
-        plt.ylabel('Density')
-        plt.legend()
-        plt.grid(True)
-        fig, ax = plt()
+        fig, ax = plt.subplots()
+        ax.plot(x, posterior_a.pdf(x), label='Posterior A', alpha=0.7)
+        ax.plot(x, posterior_b.pdf(x), label='Posterior B', alpha=0.7)
+
+        ax.axvline(ci_a[0], color='blue', linestyle='--', alpha=0.5)
+        ax.axvline(ci_a[1], color='blue', linestyle='--', alpha=0.5)
+        ax.axvline(ci_b[0], color='orange', linestyle='--', alpha=0.5)
+        ax.axvline(ci_b[1], color='orange', linestyle='--', alpha=0.5)
+
+        ax.set_title('Posterior Distributions with 95% Credible Intervals')
+        ax.set_xlabel('Conversion Rate')
+        ax.set_ylabel('Density')
+        ax.legend()
+        ax.grid(True)
+
         st.pyplot(fig)
 
-    if st.button("Calculate Bayesian Result"):
+    if st.button("Calculate Result"):
         bf_calc()
 
 with tabs[3]:
