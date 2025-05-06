@@ -255,7 +255,8 @@ with tabs[2]:
         plt.ylabel('Density')
         plt.legend()
         plt.grid(True)
-        plt.show()
+        fig, ax = plt()
+        st.pyplot(fig)
 
     if st.button("Calculate Bayesian Result"):
         bf_calc()
