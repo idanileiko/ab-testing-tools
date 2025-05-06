@@ -171,7 +171,7 @@ with tabs[1]:
         plt.ylabel('Conversion Rate (%)')
         st.pyplot(fig)
   
-    if st.button("Calculate Result"):
+    if st.button("Calculate Frequentist Result"):
         ab_test_calc()
 
 with tabs[2]:
@@ -257,7 +257,7 @@ with tabs[2]:
         plt.grid(True)
         plt.show()
 
-    if st.button("Calculate Result"):
+    if st.button("Calculate Bayesian Result"):
         bf_calc()
 
 with tabs[3]:
