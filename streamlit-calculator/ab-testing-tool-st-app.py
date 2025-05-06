@@ -189,7 +189,7 @@ with tabs[2]:
     trials_b = st.number_input(label = "Number of users in group B", value = 681, min_value = 0)
     st.write('---')
 
-     def bf_calc():
+    def bf_calc():
 
         # Assume an uninformative prior (uniform)
         alpha_prior_a = 1
@@ -222,19 +222,19 @@ with tabs[2]:
 
         if bf > 30:
             st.success("Very strong evidence for B > A")
-        elif bf > 10 and age <= 30:
+        elif bf > 10 and bf <= 30:
             st.success("Strong evidence for B > A")
-        elif bf > 3 and age <= 10:
+        elif bf > 3 and bf <= 10:
             st.success("Moderate evidence for B > A")
-        elif bf > 1 and age <= 3:
+        elif bf > 1 and bf <= 3:
             st.success("Anecdotal evidence for B > A")
         elif bf == 1:
             st.success("No evidence either way")
-        elif bf > 0.33 and age < 1:
+        elif bf > 0.33 and bf < 1:
             st.success("Anecdotal evidence for A > B")
-        elif bf > 0.10 and age <= 0.33:
+        elif bf > 0.10 and bf <= 0.33:
             st.success("Moderate evidence for A > B")
-        elif bf > 0.03 and age <= 0.10:
+        elif bf > 0.03 and bf <= 0.10:
             st.success("Strong evidence for A > B")
         elif bf <= 0.03:
             st.success("Very strong evidence for A > B")
