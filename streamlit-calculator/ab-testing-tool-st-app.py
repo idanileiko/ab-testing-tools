@@ -225,7 +225,7 @@ with tabs[2]:
         elif bf > 10 and bf <= 30:
             st.success("Strong evidence for B > A")
         elif bf > 0.10 and bf <= 10:
-            st.success("No reliable evidence found either way")
+            st.success("No strong evidence found either way")
         elif bf > 0.03 and bf <= 0.10:
             st.success("Strong evidence for A > B")
         elif bf <= 0.03:
