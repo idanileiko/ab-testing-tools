@@ -219,7 +219,7 @@ with tabs[2]:
 
         # Print experiment results
         st.success(f"Bayes Factor (group B result over group A result): {round(bf,3)}")
-        st.success(f"{round((success_a / trials_a) * 100,2)}% conversion rate in group A vs. {round((success_b / trials_b)*100,2)}% conversion rate in group B")
+        st.info(f"{round((success_a / trials_a) * 100,2)}% conversion rate in group A vs. {round((success_b / trials_b)*100,2)}% conversion rate in group B")
 
         if bf > 30:
             st.success("Very strong evidence for B > A")
