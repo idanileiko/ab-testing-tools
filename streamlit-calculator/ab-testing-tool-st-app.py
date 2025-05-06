@@ -142,7 +142,7 @@ with tabs[1]:
         successes = [successes_control, successes_test]
         n_users = [users_control, users_test]
 
-         z_stat, pval = proportions_ztest(successes, nobs = n_users)
+        z_stat, pval = proportions_ztest(successes, nobs = n_users)
         (lower_con, lower_treat), (upper_con, upper_treat) = proportion_confint(successes, nobs = n_users, alpha = significance_level)
 
         # Determine if result was significant
