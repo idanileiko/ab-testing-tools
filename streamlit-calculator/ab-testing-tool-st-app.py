@@ -12,6 +12,8 @@ import statsmodels.stats.api as sms
 from statsmodels.stats.proportion import proportions_ztest, proportion_confint
 import matplotlib.pyplot as plt
 import pandas as pd
+import numpy as np
+from scipy.stats import beta
  
 
 # Title and centered image
@@ -45,7 +47,8 @@ st.sidebar.markdown("We will need at least **1362** users, half of whom will see
 # Create multiple tabs, or "pages", for the various tools
 tab_titles = [
     "Sample Sizing Calculator",
-    "A/B Test Calculator",
+    "A/B Test Calculator - Frequentist",
+    "A/B Test Calculator - Bayesian",
     "A/B Testing File Upload"
     ]
 
@@ -119,7 +122,7 @@ with tabs[0]:
     st.markdown("- *Assumes the experiment involves two groups of users: one control and one test group.*")
     
 with tabs[1]:
-    st.markdown(":star: This calculator is for calculating the results of an A/B test!")
+    st.markdown(":star: This calculator is for calculating the results of an A/B test using a Frequentist method.")
     st.write("---")
     
     # User Inputs
@@ -132,55 +135,132 @@ with tabs[1]:
     successes_test = st.number_input(label = "Number of successes in test group", value = 130, min_value = 0)
     users_test = st.number_input(label = "Number of users in test group", value = 681, min_value = 0)
     st.write('---')
-    
-    method = st.radio("Select a testing method:",
-                      ("Frequentist", "Bayesian (coming soon!)"))
         
     def ab_test_calc():
-        
-        if method == 'Frequentist':
             
-            # Calculate A/B test result using a proportion test
-            successes = [successes_control, successes_test]
-            n_users = [users_control, users_test]
+        # Calculate A/B test result using a proportion test
+        successes = [successes_control, successes_test]
+        n_users = [users_control, users_test]
+
+         z_stat, pval = proportions_ztest(successes, nobs = n_users)
+        (lower_con, lower_treat), (upper_con, upper_treat) = proportion_confint(successes, nobs = n_users, alpha = significance_level)
+
+        # Determine if result was significant
+        if pval < significance_level:
+            result = 'YES!'
+        else:
+            result = 'NO'
             
-            z_stat, pval = proportions_ztest(successes, nobs = n_users)
-            (lower_con, lower_treat), (upper_con, upper_treat) = proportion_confint(successes, nobs = n_users, alpha = significance_level)
+        # Print experiment results
+        delta = round(((successes_test / users_test) - (successes_control / users_control)) * 100, 2)
+        st.success(f"Is there a significant difference between the control and test group? {result}")
+        if result == 'YES!':
+            if delta >= 0 :
+                st.success(f"The experimental group had a lift of {delta}% over the control group!")
+            elif delta < 0 :
+                delta_abs = abs(delta)
+                st.success(f"The experimental group was {delta_abs}% lower than the control group.")
             
-            # Determine if result was significant
-            if pval < significance_level:
-                result = 'YES!'
-            else:
-                result = 'NO'
-            
-            # Print experiment results
-            delta = round(((successes_test / users_test) - (successes_control / users_control)) * 100, 2)
-            st.success(f"Is there a significant difference between the control and test group? {result}")
-            if result == 'YES!':
-                if delta >= 0 :
-                    st.success(f"The experimental group had a lift of {delta}% over the control group!")
-                elif delta < 0 :
-                    delta_abs = abs(delta)
-                    st.success(f"The experimental group was {delta_abs}% lower than the control group.")
-            
-            # Create bar chart of experiment results
-            data = {'Control': (successes_control / users_control) * 100,
+        # Create bar chart of experiment results
+        data = {'Control': (successes_control / users_control) * 100,
                     'Test': (successes_test / users_test) * 100}
-            groups = list(data.keys())
-            values = list(data.values())
-            fig, ax = plt.subplots()
-            ax.bar(groups, values, color = ['midnightblue', 'darkorange'])
-            plt.ylabel('Conversion Rate (%)')
-            st.pyplot(fig)
-            
-        elif method == "Bayesian (coming soon!)":
-            st.write("Work in progress!")
-        
-        
+        groups = list(data.keys())
+        values = list(data.values())
+        fig, ax = plt.subplots()
+        ax.bar(groups, values, color = ['midnightblue', 'darkorange'])
+        plt.ylabel('Conversion Rate (%)')
+        st.pyplot(fig)
+  
     if st.button("Calculate Result"):
         ab_test_calc()
-        
+
 with tabs[2]:
+    st.markdown(":star: This calculator is for calculating the results of an A/B test using a Bayesian method.")
+    st.write("---")
+    
+    # User Inputs
+    st.markdown("Control group")
+    success_a = st.number_input(label = "Number of successes in group A", value = 70, min_value = 0)
+    trials_a = st.number_input(label = "Number of users in group A", value = 681, min_value = 0)
+    st.write('---')
+    
+    st.markdown("Test group")
+    success_b = st.number_input(label = "Number of successes in group B", value = 130, min_value = 0)
+    trials_b = st.number_input(label = "Number of users in group B", value = 681, min_value = 0)
+    st.write('---')
+
+     def bf_calc():
+
+        # Assume an uninformative prior (uniform)
+        alpha_prior_a = 1
+        beta_prior_a = 1
+        alpha_prior_b = 1
+        beta_prior_b = 1
+
+        # Define posterior distributions
+        posterior_a = beta(alpha_prior_a + success_a, beta_prior_a + trials_a - success_a)
+        posterior_b = beta(alpha_prior_b + success_b, beta_prior_b + trials_b - success_b)
+
+        # Draw samples
+        samples_a = posterior_a.rvs(100000)
+        samples_b = posterior_b.rvs(100000)
+
+        prob_b_better = np.mean(samples_b > samples_a)
+
+        # Bayes Factor: P(B > A) / P(A > B)
+
+        bf = prob_b_better / (1 - prob_b_better + 1e-10)
+
+        # Credible intervals
+        lower_q = (1 - 0.9) / 2
+        upper_q = 1 - lower_q
+        ci_a = np.quantile(samples_a, [lower_q, upper_q])
+        ci_b = np.quantile(samples_b, [lower_q, upper_q])
+
+        # Print experiment results
+        st.success(f"Bayes Factor (group B result over group A result): {round(bf,3)}")
+
+        if bf > 30:
+            st.success("Very strong evidence for B > A")
+        elif bf > 10 and age <= 30:
+            st.success("Strong evidence for B > A")
+        elif bf > 3 and age <= 10:
+            st.success("Moderate evidence for B > A")
+        elif bf > 1 and age <= 3:
+            st.success("Anecdotal evidence for B > A")
+        elif bf == 1:
+            st.success("No evidence either way")
+        elif bf > 0.33 and age < 1:
+            st.success("Anecdotal evidence for A > B")
+        elif bf > 0.10 and age <= 0.33:
+            st.success("Moderate evidence for A > B")
+        elif bf > 0.03 and age <= 0.10:
+            st.success("Strong evidence for A > B")
+        elif bf <= 0.03:
+            st.success("Very strong evidence for A > B")
+    
+        # Create chart of posteriors from results
+        lower_bound = min(posterior_a.ppf(0.001), posterior_b.ppf(0.001))
+        upper_bound = max(posterior_a.ppf(0.999), posterior_b.ppf(0.999))
+        x = np.linspace(lower_bound, upper_bound, 1000)
+
+        plt.plot(x, posterior_a.pdf(x), label='Posterior A', alpha=0.7)
+        plt.plot(x, posterior_b.pdf(x), label='Posterior B', alpha=0.7)
+        plt.axvline(ci_a[0], color='blue', linestyle='--', alpha=0.5)
+        plt.axvline(ci_a[1], color='blue', linestyle='--', alpha=0.5)
+        plt.axvline(ci_b[0], color='orange', linestyle='--', alpha=0.5)
+        plt.axvline(ci_b[1], color='orange', linestyle='--', alpha=0.5)
+        plt.title('Posterior Distributions with Credible Intervals')
+        plt.xlabel('Conversion Rate')
+        plt.ylabel('Density')
+        plt.legend()
+        plt.grid(True)
+        plt.show()
+
+    if st.button("Calculate Result"):
+        bf_calc()
+
+with tabs[3]:
     st.markdown(":star: This page is for calculating the results of an A/B test from an uploaded file!")
     st.markdown("The file should be a csv and the expected format is below:")
     
