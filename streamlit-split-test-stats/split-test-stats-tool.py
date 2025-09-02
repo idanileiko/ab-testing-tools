@@ -469,7 +469,7 @@ if uploaded_file is not None:
                     st.download_button(
                         label="📄 Download PDF Report (HTML)",
                         data=html_bytes,
-                        file_name=f"ab_test_report_{datetime.now().strftime('%Y%m%d_%H%M%S')}.html",
+                        file_name=f"ab_test_report_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.html",
                         mime="text/html",
                         help="Download as HTML file - you can print to PDF from your browser"
                     )
