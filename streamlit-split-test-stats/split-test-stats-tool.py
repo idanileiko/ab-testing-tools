@@ -298,7 +298,7 @@ if uploaded_file is not None:
         st.write("Please ensure your CSV file is properly formatted with numeric data.")
 
 else:
-    st.info("👆 Upload your experiment CSV file to begin analysis")
+    st.info("📥 Upload your experiment CSV file to begin analysis")
     
     # Instructions
     with st.expander("📖 How to use this app"):
@@ -327,26 +327,3 @@ else:
         - 2 groups: Two-proportion Z-test
         - 3+ groups: Chi-square test of independence
         """)
-        
-    # Sample data generator
-    with st.expander("🎯 Generate Sample Data"):
-        if st.button("Create Sample A/B Test Data"):
-            sample_data = {
-                'group': ['control', 'variant_a', 'variant_b'],
-                'population': [10000, 10000, 10000],
-                'conversions': [850, 920, 780],
-                'clicks': [2340, 2180, 2890],
-                'signups': [123, 145, 98]
-            }
-            sample_df = pd.DataFrame(sample_data)
-            
-            st.write("Sample data generated:")
-            st.dataframe(sample_df, use_container_width=True)
-            
-            csv_sample = sample_df.to_csv(index=False)
-            st.download_button(
-                label="📥 Download Sample Data",
-                data=csv_sample,
-                file_name="sample_ab_test_data.csv",
-                mime="text/csv"
-            )
