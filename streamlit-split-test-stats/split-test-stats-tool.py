@@ -408,50 +408,29 @@ if uploaded_file is not None:
                                 </tr>
                         """
                         
-                        # Add pairwise comparisons
-                        for i in range(len(groups_data)):
-                            for j in range(i + 1, len(groups_data)):
-                                group1_name = group_names[i]
-                                group2_name = group_names[j]
-                                
-                                x1, n1 = groups_data[i]
-                                x2, n2 = groups_data[j]
-                                
-                                p1 = x1 / n1
-                                p2 = x2 / n2
-                                
-                                pooled_p = (x1 + x2) / (n1 + n2)
-                                se = np.sqrt(pooled_p * (1 - pooled_p) * (1/n1 + 1/n2))
-                                
-                                if se > 0:
-                                    z_score = (p1 - p2) / se
-                                    p_value = 2 * (1 - stats.norm.cdf(abs(z_score)))
-                                    
-                                    if p1 > p2:
-                                        comparison_winner = group1_name
-                                        lift = ((p1 - p2) / p2) * 100 if p2 > 0 else 0
-                                    else:
-                                        comparison_winner = group2_name
-                                        lift = ((p2 - p1) / p1) * 100 if p1 > 0 else 0
-                                    
-                                    is_significant = p_value < alpha
-                                    row_class = "significant" if is_significant else "not-significant"
-                                    
-                                    if is_significant:
-                                        result = f"{comparison_winner} WINS"
-                                    else:
-                                        result = "No significant difference"
-                                    
-                                    html_content += f"""
-                                        <tr class="{row_class}">
-                                            <td>{group1_name} vs {group2_name}</td>
-                                            <td>{p1:.4f} ({p1*100:.2f}%)</td>
-                                            <td>{p2:.4f} ({p2*100:.2f}%)</td>
-                                            <td>{p_value:.6f}</td>
-                                            <td>{lift:.2f}%</td>
-                                            <td>{result}</td>
-                                        </tr>
-                                    """
+                                # Add pairwise comparisons to PDF with FDR
+                        for idx, detail in enumerate(comparison_details):
+                            is_significant_uncorrected = detail['p_value'] < alpha
+                            is_significant_corrected = fdr_significant[idx] if use_fdr else is_significant_uncorrected
+                            
+                            row_class = "significant" if is_significant_corrected else "not-significant"
+                            
+                            if is_significant_corrected:
+                                result = f"{detail['comparison_winner']} WINS"
+                            else:
+                                result = "No significant difference"
+                            
+                            html_content += f"""
+                                <tr class="{row_class}">
+                                    <td>{detail['comparison']}</td>
+                                    <td>{detail['p1']:.4f} ({detail['p1']*100:.2f}%)</td>
+                                    <td>{detail['p2']:.4f} ({detail['p2']*100:.2f}%)</td>
+                                    <td>{detail['p_value']:.6f}</td>
+                                    <td>{detail['lift']:.2f}%</td>
+                                    <td>{"Yes" if is_significant_corrected else "No"}</td>
+                                    <td>{result}</td>
+                                </tr>
+                            """
                         
                         html_content += """
                             </table>
@@ -469,7 +448,7 @@ if uploaded_file is not None:
                     st.download_button(
                         label="📄 Download PDF Report (HTML)",
                         data=html_bytes,
-                        file_name=f"ab_test_report_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.html",
+                        file_name=f"ab_test_report_{pd.Timestamp.now().strftime('%Y%m%d_%H%M%S')}.html",
                         mime="text/html",
                         help="Download as HTML file - you can print to PDF from your browser"
                     )
