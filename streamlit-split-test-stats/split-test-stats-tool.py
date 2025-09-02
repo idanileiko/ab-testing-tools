@@ -241,17 +241,15 @@ if uploaded_file is not None:
                     # Visualization
                     st.subheader("📈 Visualization")
                     
-                    # Create visualization data
+                    # Create visualization data using the same calculation as tables
                     viz_data = []
-                    for i, (group_data, group_name) in enumerate(zip(groups_data, group_names)):
-                        rate = np.mean(group_data)
-                        population = len(group_data)
-                        count = int(np.sum(group_data))
+                    for i, (group_name, rate) in enumerate(zip(group_names, group_rates)):
+                        successes, population = groups_data[i]
                         
                         viz_data.append({
                             'Group': group_name,
-                            'Conversion_Rate': rate,
-                            'Count': count,
+                            'Conversion_Rate': rate,  # Use the already calculated rate
+                            'Count': successes,
                             'Population': population
                         })
                     
@@ -278,38 +276,210 @@ if uploaded_file is not None:
         if metric_columns and len(df) >= 2:
             st.subheader("💾 Export Results")
             
-            # Create downloadable report
-            report_data = []
-            for metric in metric_columns:
-                for i, row in df.iterrows():
-                    group_name = row[group_id_column] if group_id_column else f"Group_{i+1}"
-                    rate = row[metric] / row[pop_size_column]
+            col1, col2 = st.columns(2)
+            
+            with col1:
+                # Create downloadable CSV report
+                report_data = []
+                for metric in metric_columns:
+                    for i, row in df.iterrows():
+                        group_name = row[group_id_column] if group_id_column else f"Group_{i+1}"
+                        rate = row[metric] / row[pop_size_column]
+                        
+                        report_data.append({
+                            'Metric': metric,
+                            'Group': group_name,
+                            'Count': row[metric],
+                            'Population': row[pop_size_column],
+                            'Conversion_Rate': rate,
+                            'Conversion_Rate_Percent': f"{rate*100:.2f}%"
+                        })
+                
+                report_df = pd.DataFrame(report_data)
+                csv_report = report_df.to_csv(index=False)
+                
+                st.download_button(
+                    label="📊 Download CSV Report",
+                    data=csv_report,
+                    file_name="ab_test_analysis.csv",
+                    mime="text/csv"
+                )
+            
+            with col2:
+                # Generate PDF Report
+                if st.button("📄 Generate PDF Report"):
                     
-                    report_data.append({
-                        'Metric': metric,
-                        'Group': group_name,
-                        'Count': row[metric],
-                        'Population': row[pop_size_column],
-                        'Conversion_Rate': rate,
-                        'Conversion_Rate_Percent': f"{rate*100:.2f}%"
-                    })
-            
-            report_df = pd.DataFrame(report_data)
-            csv_report = report_df.to_csv(index=False)
-            
-            st.download_button(
-                label="📊 Download Analysis Report",
-                data=csv_report,
-                file_name="ab_test_analysis.csv",
-                mime="text/csv"
-            )
+                    # Create PDF content as HTML (since we can't use reportlab)
+                    html_content = f"""
+                    <!DOCTYPE html>
+                    <html>
+                    <head>
+                        <title>A/B Testing Analysis Report</title>
+                        <style>
+                            body {{ font-family: Arial, sans-serif; margin: 40px; }}
+                            h1 {{ color: #1f77b4; border-bottom: 2px solid #1f77b4; }}
+                            h2 {{ color: #333; margin-top: 30px; }}
+                            .winner {{ background-color: #d4edda; padding: 15px; border-radius: 5px; margin: 10px 0; }}
+                            .metric-section {{ margin: 20px 0; border: 1px solid #ddd; padding: 15px; }}
+                            table {{ border-collapse: collapse; width: 100%; margin: 10px 0; }}
+                            th, td {{ border: 1px solid #ddd; padding: 8px; text-align: left; }}
+                            th {{ background-color: #f2f2f2; }}
+                            .significant {{ background-color: #d1ecf1; }}
+                            .not-significant {{ background-color: #f8d7da; }}
+                        </style>
+                    </head>
+                    <body>
+                        <h1>🧪 A/B Testing Analysis Report</h1>
+                        <p><strong>Generated:</strong> {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}</p>
+                        <p><strong>File:</strong> {uploaded_file.name}</p>
+                        <p><strong>Total Groups:</strong> {len(df)}</p>
+                        <p><strong>Significance Level:</strong> {alpha}</p>
+                    """
+                    
+                    # Add analysis for each metric
+                    for metric in metric_columns:
+                        # Recalculate for PDF
+                        groups_data = []
+                        group_names = []
+                        group_rates = []
+                        
+                        for i, row in df.iterrows():
+                            group_name = row[group_id_column] if group_id_column else f"Group_{i+1}"
+                            successes = int(row[metric])
+                            population = int(row[pop_size_column])
+                            rate = successes / population
+                            
+                            groups_data.append((successes, population))
+                            group_names.append(group_name)
+                            group_rates.append(rate)
+                        
+                        best_group_idx = np.argmax(group_rates)
+                        winner = group_names[best_group_idx]
+                        winner_rate = group_rates[best_group_idx]
+                        
+                        html_content += f"""
+                        <div class="metric-section">
+                            <h2>📊 Analysis for: {metric}</h2>
+                            <div class="winner">
+                                <strong>🏆 WINNER: {winner}</strong><br>
+                                Conversion Rate: {winner_rate:.4f} ({winner_rate*100:.2f}%)
+                            </div>
+                            
+                            <h3>Group Performance Summary</h3>
+                            <table>
+                                <tr>
+                                    <th>Rank</th>
+                                    <th>Group</th>
+                                    <th>Conversion Rate</th>
+                                    <th>Count/Population</th>
+                                </tr>
+                        """
+                        
+                        # Add sorted group data
+                        sorted_groups = sorted(
+                            zip(group_names, group_rates, groups_data), 
+                            key=lambda x: x[1], 
+                            reverse=True
+                        )
+                        
+                        for rank, (name, rate, (successes, population)) in enumerate(sorted_groups, 1):
+                            winner_badge = "🏆 " if name == winner else ""
+                            html_content += f"""
+                                <tr>
+                                    <td>{winner_badge}{rank}</td>
+                                    <td>{name}</td>
+                                    <td>{rate:.4f} ({rate*100:.2f}%)</td>
+                                    <td>{successes:,}/{population:,}</td>
+                                </tr>
+                            """
+                        
+                        html_content += """
+                            </table>
+                            
+                            <h3>Pairwise Statistical Comparisons</h3>
+                            <table>
+                                <tr>
+                                    <th>Comparison</th>
+                                    <th>Group 1 Rate</th>
+                                    <th>Group 2 Rate</th>
+                                    <th>P-value</th>
+                                    <th>Lift %</th>
+                                    <th>Result</th>
+                                </tr>
+                        """
+                        
+                        # Add pairwise comparisons
+                        for i in range(len(groups_data)):
+                            for j in range(i + 1, len(groups_data)):
+                                group1_name = group_names[i]
+                                group2_name = group_names[j]
+                                
+                                x1, n1 = groups_data[i]
+                                x2, n2 = groups_data[j]
+                                
+                                p1 = x1 / n1
+                                p2 = x2 / n2
+                                
+                                pooled_p = (x1 + x2) / (n1 + n2)
+                                se = np.sqrt(pooled_p * (1 - pooled_p) * (1/n1 + 1/n2))
+                                
+                                if se > 0:
+                                    z_score = (p1 - p2) / se
+                                    p_value = 2 * (1 - stats.norm.cdf(abs(z_score)))
+                                    
+                                    if p1 > p2:
+                                        comparison_winner = group1_name
+                                        lift = ((p1 - p2) / p2) * 100 if p2 > 0 else 0
+                                    else:
+                                        comparison_winner = group2_name
+                                        lift = ((p2 - p1) / p1) * 100 if p1 > 0 else 0
+                                    
+                                    is_significant = p_value < alpha
+                                    row_class = "significant" if is_significant else "not-significant"
+                                    
+                                    if is_significant:
+                                        result = f"{comparison_winner} WINS"
+                                    else:
+                                        result = "No significant difference"
+                                    
+                                    html_content += f"""
+                                        <tr class="{row_class}">
+                                            <td>{group1_name} vs {group2_name}</td>
+                                            <td>{p1:.4f} ({p1*100:.2f}%)</td>
+                                            <td>{p2:.4f} ({p2*100:.2f}%)</td>
+                                            <td>{p_value:.6f}</td>
+                                            <td>{lift:.2f}%</td>
+                                            <td>{result}</td>
+                                        </tr>
+                                    """
+                        
+                        html_content += """
+                            </table>
+                        </div>
+                        """
+                    
+                    html_content += """
+                        </body>
+                    </html>
+                    """
+                    
+                    # Convert HTML to bytes for download
+                    html_bytes = html_content.encode('utf-8')
+                    
+                    st.download_button(
+                        label="📄 Download PDF Report (HTML)",
+                        data=html_bytes,
+                        file_name=f"ab_test_report_{datetime.now().strftime('%Y%m%d_%H%M%S')}.html",
+                        mime="text/html",
+                        help="Download as HTML file - you can print to PDF from your browser"
+                    )
             
     except Exception as e:
         st.error(f"❌ Error processing the file: {str(e)}")
         st.write("Please ensure your CSV file is properly formatted with numeric data.")
 
 else:
-    st.info("📥 Upload your experiment CSV file to begin analysis")
+    st.info("👆 Upload your experiment CSV file to begin analysis")
     
     # Instructions
     with st.expander("📖 How to use this app"):
