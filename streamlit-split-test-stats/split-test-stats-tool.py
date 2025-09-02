@@ -110,122 +110,133 @@ if uploaded_file is not None:
             st.subheader("🔬 Statistical Test Results")
             
             if len(df) >= 2:
-                test_results = []
-                
                 for metric in metric_columns:
                     st.write(f"**Analysis for: {metric}**")
                     
                     # Prepare data for statistical tests
                     groups_data = []
                     group_names = []
+                    group_rates = []
                     
                     for i, row in df.iterrows():
                         group_name = row[group_id_column] if group_id_column else f"Group_{i+1}"
                         successes = int(row[metric])
                         population = int(row[pop_size_column])
+                        rate = successes / population
                         
-                        # Create binary array (1 for success, 0 for failure)
-                        group_array = np.concatenate([
-                            np.ones(successes),
-                            np.zeros(population - successes)
-                        ])
-                        
-                        groups_data.append(group_array)
+                        groups_data.append((successes, population))
                         group_names.append(group_name)
+                        group_rates.append(rate)
                     
-                    # Run pairwise comparisons
-                    if len(groups_data) == 2:
-                        # Two-sample proportion test
-                        group1, group2 = groups_data
+                    # Find the best performing group
+                    best_group_idx = np.argmax(group_rates)
+                    winner = group_names[best_group_idx]
+                    winner_rate = group_rates[best_group_idx]
+                    
+                    # Winner announcement
+                    st.success(f"🏆 **WINNER: {winner}** with {winner_rate:.4f} ({winner_rate*100:.2f}%) conversion rate")
+                    
+                    # Pairwise comparisons
+                    st.write("**Pairwise Statistical Comparisons:**")
+                    
+                    comparison_results = []
+                    significant_wins = []
+                    
+                    for i in range(len(groups_data)):
+                        for j in range(i + 1, len(groups_data)):
+                            group1_name = group_names[i]
+                            group2_name = group_names[j]
+                            
+                            # Get data
+                            x1, n1 = groups_data[i]  # successes, population
+                            x2, n2 = groups_data[j]
+                            
+                            p1 = x1 / n1
+                            p2 = x2 / n2
+                            
+                            # Two-proportion z-test
+                            pooled_p = (x1 + x2) / (n1 + n2)
+                            se = np.sqrt(pooled_p * (1 - pooled_p) * (1/n1 + 1/n2))
+                            
+                            if se > 0:
+                                z_score = (p1 - p2) / se
+                                p_value = 2 * (1 - stats.norm.cdf(abs(z_score)))
+                                
+                                # Determine winner of this comparison
+                                if p1 > p2:
+                                    comparison_winner = group1_name
+                                    lift = ((p1 - p2) / p2) * 100 if p2 > 0 else 0
+                                else:
+                                    comparison_winner = group2_name
+                                    lift = ((p2 - p1) / p1) * 100 if p1 > 0 else 0
+                                
+                                is_significant = p_value < alpha
+                                
+                                if is_significant:
+                                    significant_wins.append(comparison_winner)
+                                
+                                # Status determination
+                                if is_significant:
+                                    status = f"🎯 {comparison_winner} WINS"
+                                else:
+                                    status = "🤝 No significant difference"
+                                
+                                comparison_results.append({
+                                    'Comparison': f"{group1_name} vs {group2_name}",
+                                    'Group 1 Rate': f"{p1:.4f} ({p1*100:.2f}%)",
+                                    'Group 2 Rate': f"{p2:.4f} ({p2*100:.2f}%)",
+                                    'P-value': f"{p_value:.6f}",
+                                    'Significant': is_significant,
+                                    'Lift %': f"{lift:.2f}%",
+                                    'Result': status
+                                })
+                    
+                    # Display comparison results
+                    if comparison_results:
+                        comparison_df = pd.DataFrame(comparison_results)
+                        st.dataframe(comparison_df, use_container_width=True)
                         
-                        # Calculate proportions
-                        p1 = np.mean(group1)
-                        p2 = np.mean(group2)
-                        n1, n2 = len(group1), len(group2)
+                        # Overall winner summary
+                        st.write("**🏁 Final Verdict:**")
                         
-                        # Two-proportion z-test
-                        pooled_p = (np.sum(group1) + np.sum(group2)) / (n1 + n2)
-                        se = np.sqrt(pooled_p * (1 - pooled_p) * (1/n1 + 1/n2))
-                        z_score = (p1 - p2) / se
-                        p_value = 2 * (1 - stats.norm.cdf(abs(z_score)))
-                        
-                        # Effect size (difference in proportions)
-                        effect_size = abs(p1 - p2)
-                        
-                        # Confidence interval for difference
-                        se_diff = np.sqrt(p1*(1-p1)/n1 + p2*(1-p2)/n2)
-                        margin_error = stats.norm.ppf(1-alpha/2) * se_diff
-                        ci_lower = (p1 - p2) - margin_error
-                        ci_upper = (p1 - p2) + margin_error
-                        
-                        # Display results
-                        col1, col2, col3 = st.columns(3)
-                        
-                        with col1:
-                            st.metric(
-                                f"{group_names[0]} Rate", 
-                                f"{p1:.4f} ({p1*100:.2f}%)"
-                            )
-                        with col2:
-                            st.metric(
-                                f"{group_names[1]} Rate", 
-                                f"{p2:.4f} ({p2*100:.2f}%)"
-                            )
-                        with col3:
-                            significance = "✅ Significant" if p_value < alpha else "❌ Not Significant"
-                            st.metric("P-value", f"{p_value:.6f}")
-                            st.write(significance)
-                        
-                        # Detailed results
-                        results_data = {
-                            "Metric": [metric],
-                            "Z-score": [f"{z_score:.4f}"],
-                            "P-value": [f"{p_value:.6f}"],
-                            "Significant": [p_value < alpha],
-                            "Effect Size": [f"{effect_size:.4f}"],
-                            "95% CI": [f"({ci_lower:.4f}, {ci_upper:.4f})"]
-                        }
-                        
-                        results_df = pd.DataFrame(results_data)
-                        st.dataframe(results_df, use_container_width=True)
-                        
-                    elif len(groups_data) > 2:
-                        # Multiple groups - Chi-square test
-                        st.write("**Multi-group Analysis (Chi-square test)**")
-                        
-                        # Prepare contingency table
-                        successes = [np.sum(group) for group in groups_data]
-                        failures = [len(group) - np.sum(group) for group in groups_data]
-                        
-                        contingency_table = np.array([successes, failures])
-                        
-                        # Chi-square test
-                        chi2, p_value, dof, expected = stats.chi2_contingency(contingency_table)
-                        
-                        # Display results
-                        col1, col2, col3 = st.columns(3)
-                        
-                        with col1:
-                            st.metric("Chi-square", f"{chi2:.4f}")
-                        with col2:
-                            st.metric("P-value", f"{p_value:.6f}")
-                        with col3:
-                            significance = "✅ Significant" if p_value < alpha else "❌ Not Significant"
-                            st.write(significance)
-                        
-                        # Show group rates
-                        rates_data = []
-                        for i, (group_data, group_name) in enumerate(zip(groups_data, group_names)):
-                            rate = np.mean(group_data)
-                            rates_data.append({
-                                'Group': group_name,
-                                'Rate': f"{rate:.4f}",
-                                'Rate %': f"{rate*100:.2f}%",
-                                'Count': f"{int(np.sum(group_data))}/{len(group_data)}"
-                            })
-                        
-                        rates_df = pd.DataFrame(rates_data)
-                        st.dataframe(rates_df, use_container_width=True)
+                        if significant_wins:
+                            # Count wins for each group
+                            win_counts = {}
+                            for win in significant_wins:
+                                win_counts[win] = win_counts.get(win, 0) + 1
+                            
+                            # Find group with most significant wins
+                            statistical_winner = max(win_counts, key=win_counts.get)
+                            
+                            if statistical_winner == winner:
+                                st.success(f"🎉 **{winner}** is both the highest performer AND has statistically significant wins!")
+                            else:
+                                st.warning(f"⚠️ **{winner}** has the highest rate, but **{statistical_winner}** has the most statistically significant wins")
+                        else:
+                            st.info(f"📊 **{winner}** has the highest conversion rate, but no statistically significant differences found")
+                    
+                    # Overall summary for this metric
+                    rates_summary = []
+                    for i, (group_name, rate) in enumerate(zip(group_names, group_rates)):
+                        successes, population = groups_data[i]
+                        rates_summary.append({
+                            'Rank': i + 1 if group_name != winner else "🏆 1",
+                            'Group': group_name,
+                            'Conversion Rate': f"{rate:.4f}",
+                            'Percentage': f"{rate*100:.2f}%",
+                            'Count': f"{successes:,}/{population:,}"
+                        })
+                    
+                    # Sort by rate descending
+                    rates_summary.sort(key=lambda x: float(x['Conversion Rate']), reverse=True)
+                    
+                    # Update ranks
+                    for i, item in enumerate(rates_summary):
+                        if not str(item['Rank']).startswith('🏆'):
+                            item['Rank'] = i + 1
+                    
+                    summary_df = pd.DataFrame(rates_summary)
+                    st.dataframe(summary_df, use_container_width=True)
                     
                     # Visualization
                     st.subheader("📈 Visualization")
