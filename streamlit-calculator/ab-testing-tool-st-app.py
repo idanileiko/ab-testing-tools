@@ -48,8 +48,7 @@ st.sidebar.markdown("We will need at least **1362** users, half of whom will see
 tab_titles = [
     "Sample Sizing Calculator",
     "A/B Test Calculator - Frequentist",
-    "A/B Test Calculator - Bayesian",
-    "A/B Testing File Upload"
+    "A/B Test Calculator - Bayesian"
     ]
 
 tabs = st.tabs(tab_titles)
@@ -256,3 +255,4 @@ with tabs[2]:
 
     if st.button("Calculate Bayesian Result"):
         bf_calc()
+
