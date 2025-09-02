@@ -256,20 +256,3 @@ with tabs[2]:
 
     if st.button("Calculate Bayesian Result"):
         bf_calc()
-
-with tabs[3]:
-    st.markdown(":star: This page is for calculating the results of an A/B test from an uploaded file!")
-    st.markdown("The file should be a csv and the expected format is below:")
-    
-    example = {'Group':['Control','Test'], 'Users':[750,800], 'Successes':[70,130]}
-    df_example = pd.DataFrame(example)
-    st.dataframe(df_example)
-    
-    st.write("---")
-    
-    uploaded_file = st.file_uploader("Choose a file")
-    if uploaded_file is not None:
-        #read csv
-        df = pd.read_csv(uploaded_file)
-    else:
-        st.warning("You need to upload a csv file")
