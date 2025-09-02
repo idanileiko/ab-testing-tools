@@ -1,4 +1,0 @@
-streamlit
-statsmodels
-pandas
-matplotlib
