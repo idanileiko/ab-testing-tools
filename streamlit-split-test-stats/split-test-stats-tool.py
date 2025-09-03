@@ -165,7 +165,7 @@ if uploaded_file is not None:
                                 
                                 # Status determination
                                 if is_significant:
-                                    status = f"🎯 {comparison_winner} WINS"
+                                    status = f"{comparison_winner} WINS"
                                 else:
                                     status = "No significant difference"
                                 
@@ -313,7 +313,7 @@ if uploaded_file is not None:
                     csv_report = pairwise_df.to_csv(index=False)
                     
                     st.download_button(
-                        label="📊 Download Pairwise Analysis CSV",
+                        label="📊 Download Stats Analysis CSV",
                         data=csv_report,
                         file_name="ab_test_pairwise_analysis.csv",
                         mime="text/csv"
