@@ -94,27 +94,6 @@ if uploaded_file is not None:
                 rate_col = f"{metric}_rate"
                 analysis_df[rate_col] = analysis_df[metric] / analysis_df[pop_size_column]
             
-            # Display summary statistics
-            st.subheader("📊 Summary Statistics")
-            
-            summary_data = []
-            for i, row in analysis_df.iterrows():
-                group_name = row[group_id_column] if group_id_column else f"Group_{i+1}"
-                
-                for metric in metric_columns:
-                    rate = row[metric] / row[pop_size_column]
-                    summary_data.append({
-                        'Group': group_name,
-                        'Metric': metric,
-                        'Count': row[metric],
-                        'Population': row[pop_size_column],
-                        'Rate': rate,
-                        'Rate %': f"{rate*100:.2f}%"
-                    })
-            
-            summary_df = pd.DataFrame(summary_data)
-            st.dataframe(summary_df, use_container_width=True)
-            
             # Statistical Tests
             st.subheader("🔬 Statistical Test Results")
             
@@ -143,7 +122,7 @@ if uploaded_file is not None:
                     winner_rate = group_rates[best_group_idx]
                     
                     # Winner announcement
-                    st.success(f"🏆 **WINNER: {winner}** with {winner_rate:.4f} ({winner_rate*100:.2f}%) conversion rate")
+                    st.success(f"🏆 **WINNER: {winner}** with {winner_rate*100:.2f}% conversion rate")
 
                     # Overall summary for this metric
                     rates_summary = []
@@ -152,9 +131,8 @@ if uploaded_file is not None:
                         rates_summary.append({
                             'Rank': i + 1 if group_name != winner else "🏆 1",
                             'Group': group_name,
-                            'Conversion Rate': f"{rate:.4f}",
-                            'Percentage': f"{rate*100:.2f}%",
-                            'Count': f"{successes:,}/{population:,}"
+                            'Conversion Rate': f"{rate*100:.2f}%",
+                            'Successes / Population': f"{successes} / {population}"
                         })
                     
                     # Sort by rate descending
@@ -255,7 +233,7 @@ if uploaded_file is not None:
                     )
                     fig.update_traces(texttemplate='%{text:.3f}', textposition='outside')
                     fig.update_layout(yaxis_title="Conversion Rate")
-                    st.plotly_chart(fig, use_container_width=True)
+                    st.plotly_chart(fig, use_container_width=False)
                     
                     st.divider()
             
@@ -468,10 +446,11 @@ else:
         
         **Steps:**
         1. Upload your CSV file
-        2. Select the column containing population sizes
-        3. Select the metric columns you want to analyze
-        4. Review statistical test results
-        5. Download analysis report
+        2. Select the column containing the experiment group labels
+        3. Select the column containing population size
+        4. Select the metric columns you want to analyze
+        5. Review statistical test results
+        6. Download analysis report
         
         **Statistical Tests:**
         - 2 groups: Two-proportion Z-test
