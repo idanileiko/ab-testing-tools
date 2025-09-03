@@ -227,20 +227,7 @@ if uploaded_file is not None:
                     
                     summary_df = pd.DataFrame(rates_summary)
                     st.dataframe(summary_df, use_container_width=True)
-                    
-                    # Pairwise comparisons
-                    st.write("**Pairwise Statistical Comparisons:**")
-                    
-                    # Display comparison results
-                    if comparison_results:
-                        comparison_df = pd.DataFrame(comparison_results)
-                        # Sort by lift percentage (descending)
-                        comparison_df['Lift_Numeric'] = comparison_df['Lift %'].str.replace('%', '').astype(float)
-                        comparison_df = comparison_df.sort_values('Lift_Numeric', ascending=False)
-                        # Remove the 'Metric' column and helper column for display (we'll keep Metric for export)
-                        display_df = comparison_df.drop(['Metric', 'Lift_Numeric'], axis=1)
-                        st.dataframe(display_df, use_container_width=True)
-                    
+
                     # Visualization
                     st.subheader("📈 Visualization")
                     
@@ -292,6 +279,18 @@ if uploaded_file is not None:
                     with chart_col2:
                         st.plotly_chart(fig, use_container_width=True)
                     
+                    # Pairwise comparisons
+                    st.write("**Pairwise Statistical Comparisons:**")
+                    
+                    if comparison_results:
+                        comparison_df = pd.DataFrame(comparison_results)
+                        # Sort by lift percentage (descending)
+                        comparison_df['Lift_Numeric'] = comparison_df['Lift %'].str.replace('%', '').astype(float)
+                        comparison_df = comparison_df.sort_values('Lift_Numeric', ascending=False)
+                        # Remove the 'Metric' column and helper column for display (we'll keep Metric for export)
+                        display_df = comparison_df.drop(['Metric', 'Lift_Numeric'], axis=1)
+                        st.dataframe(display_df, use_container_width=True)
+
                     st.divider()
             
             else:
