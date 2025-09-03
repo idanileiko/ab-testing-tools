@@ -122,6 +122,9 @@ if uploaded_file is not None:
                     winner_rate = group_rates[best_group_idx]
 
                     # Run stats test
+                    comparison_results = []
+                    significant_wins = []
+                    
                     for i in range(len(groups_data)):
                         for j in range(i + 1, len(groups_data)):
                             group1_name = group_names[i]
@@ -199,9 +202,6 @@ if uploaded_file is not None:
                     
                     # Pairwise comparisons
                     st.write("**Pairwise Statistical Comparisons:**")
-                    
-                    comparison_results = []
-                    significant_wins = []
                     
                     # Display comparison results
                     if comparison_results:
