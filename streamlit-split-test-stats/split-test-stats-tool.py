@@ -13,7 +13,7 @@ st.set_page_config(
 )
 
 st.title("🧪 A/B Testing Statistical Analysis")
-st.write("Upload your experiment data and run statistical tests between groups")
+st.write("Upload your experiment data and run statistical tests between groups. Currently only works for binary values (e.g. converted or not, clicked a tile or not, etc. and not continuous variables such as spend.")
 
 # File uploader
 uploaded_file = st.file_uploader(
