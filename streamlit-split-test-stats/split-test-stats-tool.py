@@ -42,18 +42,18 @@ if uploaded_file is not None:
         col1, col2 = st.columns([1, 1])
         
         with col1:
-            # Population size column selector
-            pop_size_column = st.selectbox(
-                "Select the population size column:",
-                columns,
-                help="Column containing the total number of users in each experiment group"
-            )
-            
             # Group identifier (optional)
             group_id_column = st.selectbox(
                 "Select group identifier column (optional):",
                 [None] + columns,
                 help="Column that identifies each experiment group (e.g., 'control', 'variant_a')"
+            )
+
+            # Population size column selector
+            pop_size_column = st.selectbox(
+                "Select the population size column:",
+                columns,
+                help="Column containing the total number of users in each experiment group"
             )
         
         with col2:
@@ -78,7 +78,7 @@ if uploaded_file is not None:
             use_fdr = st.checkbox(
                 "Apply FDR (False Discovery Rate) correction",
                 value=True,
-                help="Benjamini-Hochberg procedure - less conservative than Bonferroni while controlling false discoveries"
+                help="Benjamini-Hochberg procedure - prevents against false positive errors when running a large number of pair-wise comparisons."
             )
         
         if metric_columns:
@@ -142,6 +142,29 @@ if uploaded_file is not None:
                     
                     # Winner announcement
                     st.success(f"🏆 **WINNER: {winner}** with {winner_rate:.4f} ({winner_rate*100:.2f}%) conversion rate")
+
+                    # Overall summary for this metric
+                    rates_summary = []
+                    for i, (group_name, rate) in enumerate(zip(group_names, group_rates)):
+                        successes, population = groups_data[i]
+                        rates_summary.append({
+                            'Rank': i + 1 if group_name != winner else "🏆 1",
+                            'Group': group_name,
+                            'Conversion Rate': f"{rate:.4f}",
+                            'Percentage': f"{rate*100:.2f}%",
+                            'Count': f"{successes:,}/{population:,}"
+                        })
+                    
+                    # Sort by rate descending
+                    rates_summary.sort(key=lambda x: float(x['Conversion Rate']), reverse=True)
+                    
+                    # Update ranks
+                    for i, item in enumerate(rates_summary):
+                        if not str(item['Rank']).startswith('🏆'):
+                            item['Rank'] = i + 1
+                    
+                    summary_df = pd.DataFrame(rates_summary)
+                    st.dataframe(summary_df, use_container_width=True)
                     
                     # Pairwise comparisons
                     st.write("**Pairwise Statistical Comparisons:**")
@@ -186,7 +209,7 @@ if uploaded_file is not None:
                                 if is_significant:
                                     status = f"🎯 {comparison_winner} WINS"
                                 else:
-                                    status = "🤝 No significant difference"
+                                    status = "No significant difference"
                                 
                                 comparison_results.append({
                                     'Comparison': f"{group1_name} vs {group2_name}",
@@ -202,29 +225,6 @@ if uploaded_file is not None:
                     if comparison_results:
                         comparison_df = pd.DataFrame(comparison_results)
                         st.dataframe(comparison_df, use_container_width=True)
-                        
-                    # Overall summary for this metric
-                    rates_summary = []
-                    for i, (group_name, rate) in enumerate(zip(group_names, group_rates)):
-                        successes, population = groups_data[i]
-                        rates_summary.append({
-                            'Rank': i + 1 if group_name != winner else "🏆 1",
-                            'Group': group_name,
-                            'Conversion Rate': f"{rate:.4f}",
-                            'Percentage': f"{rate*100:.2f}%",
-                            'Count': f"{successes:,}/{population:,}"
-                        })
-                    
-                    # Sort by rate descending
-                    rates_summary.sort(key=lambda x: float(x['Conversion Rate']), reverse=True)
-                    
-                    # Update ranks
-                    for i, item in enumerate(rates_summary):
-                        if not str(item['Rank']).startswith('🏆'):
-                            item['Rank'] = i + 1
-                    
-                    summary_df = pd.DataFrame(rates_summary)
-                    st.dataframe(summary_df, use_container_width=True)
                     
                     # Visualization
                     st.subheader("📈 Visualization")
@@ -446,7 +446,7 @@ if uploaded_file is not None:
         st.write("Please ensure your CSV file is properly formatted with numeric data.")
 
 else:
-    st.info("👆 Upload your experiment CSV file to begin analysis")
+    st.info("📥 Upload your experiment CSV file to begin analysis")
     
     # Instructions
     with st.expander("📖 How to use this app"):
