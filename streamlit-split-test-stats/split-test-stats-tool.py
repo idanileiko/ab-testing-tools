@@ -211,7 +211,8 @@ if uploaded_file is not None:
                             'Rank': i + 1,
                             'Group': group_name,
                             'Conversion Rate': f"{rate:.4f}",
-                            'Successes / Population': f"{successes} / {population}"
+                            'Successes': f"{successes:,}",
+                            'Population': f"{population:,}"
                         })
                     
                     # Sort by rate descending
@@ -225,7 +226,7 @@ if uploaded_file is not None:
                                 item['Rank'] = "🏆 1"
                     
                     summary_df = pd.DataFrame(rates_summary)
-                    st.dataframe(summary_df, use_container_width=False)
+                    st.dataframe(summary_df, use_container_width=True)
                     
                     # Pairwise comparisons
                     st.write("**Pairwise Statistical Comparisons:**")
@@ -233,8 +234,11 @@ if uploaded_file is not None:
                     # Display comparison results
                     if comparison_results:
                         comparison_df = pd.DataFrame(comparison_results)
-                        # Remove the 'Metric' column for display (we'll keep it for export)
-                        display_df = comparison_df.drop('Metric', axis=1)
+                        # Sort by lift percentage (descending)
+                        comparison_df['Lift_Numeric'] = comparison_df['Lift %'].str.replace('%', '').astype(float)
+                        comparison_df = comparison_df.sort_values('Lift_Numeric', ascending=False)
+                        # Remove the 'Metric' column and helper column for display (we'll keep Metric for export)
+                        display_df = comparison_df.drop(['Metric', 'Lift_Numeric'], axis=1)
                         st.dataframe(display_df, use_container_width=True)
                     
                     # Visualization
