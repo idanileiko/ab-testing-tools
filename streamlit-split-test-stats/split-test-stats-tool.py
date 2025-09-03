@@ -4,6 +4,13 @@ import numpy as np
 from scipy import stats
 import plotly.express as px
 import plotly.graph_objects as go
+from reportlab.lib.pagesizes import letter, A4
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, PageBreak
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+from reportlab.lib.units import inch
+from reportlab.lib import colors
+import io
+from datetime import datetime
 
 # Set page configuration
 st.set_page_config(
@@ -12,8 +19,169 @@ st.set_page_config(
     layout="wide"
 )
 
+def create_pdf_report(df, analysis_results, metric_columns, pop_size_column, group_id_column, alpha):
+    """Create a comprehensive PDF report of the A/B test analysis"""
+    buffer = io.BytesIO()
+    doc = SimpleDocTemplate(buffer, pagesize=A4)
+    styles = getSampleStyleSheet()
+    story = []
+    
+    # Custom styles
+    title_style = ParagraphStyle(
+        'CustomTitle',
+        parent=styles['Heading1'],
+        fontSize=18,
+        spaceAfter=30,
+        alignment=1  # Center alignment
+    )
+    
+    heading_style = ParagraphStyle(
+        'CustomHeading',
+        parent=styles['Heading2'],
+        fontSize=14,
+        spaceAfter=12,
+        spaceBefore=12
+    )
+    
+    # Title
+    story.append(Paragraph("🧪 A/B Testing Statistical Analysis Report", title_style))
+    story.append(Spacer(1, 12))
+    
+    # Report metadata
+    report_date = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    story.append(Paragraph(f"<b>Report Generated:</b> {report_date}", styles['Normal']))
+    story.append(Paragraph(f"<b>Total Groups:</b> {len(df)}", styles['Normal']))
+    story.append(Paragraph(f"<b>Metrics Analyzed:</b> {', '.join(metric_columns)}", styles['Normal']))
+    story.append(Paragraph(f"<b>Significance Level:</b> {alpha}", styles['Normal']))
+    story.append(Spacer(1, 20))
+    
+    # Data Overview
+    story.append(Paragraph("Data Overview", heading_style))
+    
+    # Create overview table
+    overview_data = [['Group', 'Population Size'] + [f'{metric}' for metric in metric_columns] + [f'{metric} Rate' for metric in metric_columns]]
+    
+    for i, row in df.iterrows():
+        group_name = row[group_id_column] if group_id_column else f"Group_{i+1}"
+        population = int(row[pop_size_column])
+        row_data = [group_name, f"{population:,}"]
+        
+        # Add metric counts
+        for metric in metric_columns:
+            row_data.append(f"{int(row[metric]):,}")
+        
+        # Add metric rates
+        for metric in metric_columns:
+            rate = row[metric] / population
+            row_data.append(f"{rate:.4f} ({rate*100:.2f}%)")
+        
+        overview_data.append(row_data)
+    
+    # Create and style the overview table
+    overview_table = Table(overview_data)
+    overview_table.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+        ('FONTSIZE', (0, 0), (-1, 0), 10),
+        ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+        ('BACKGROUND', (0, 1), (-1, -1), colors.beige),
+        ('FONTSIZE', (0, 1), (-1, -1), 9),
+        ('GRID', (0, 0), (-1, -1), 1, colors.black)
+    ]))
+    
+    story.append(overview_table)
+    story.append(Spacer(1, 20))
+    
+    # Statistical Analysis Results
+    for metric_idx, metric in enumerate(metric_columns):
+        if metric_idx > 0:
+            story.append(PageBreak())
+        
+        story.append(Paragraph(f"Statistical Analysis: {metric}", heading_style))
+        
+        # Get results for this metric
+        metric_results = analysis_results.get(metric, {})
+        
+        # Winner announcement
+        if 'winner' in metric_results:
+            winner_text = f"🏆 WINNER: {metric_results['winner']} with {metric_results['winner_rate']:.4f} ({metric_results['winner_rate']*100:.2f}%) conversion rate"
+            story.append(Paragraph(winner_text, styles['Normal']))
+        else:
+            story.append(Paragraph("📊 NO CLEAR WINNER - No statistically significant differences found", styles['Normal']))
+        
+        story.append(Spacer(1, 12))
+        
+        # Group performance ranking
+        story.append(Paragraph("Group Performance Ranking:", styles['Heading3']))
+        
+        if 'group_summary' in metric_results:
+            ranking_data = [['Rank', 'Group', 'Conversion Rate', 'Successes', 'Population']]
+            for item in metric_results['group_summary']:
+                ranking_data.append([
+                    str(item['Rank']),
+                    item['Group'],
+                    item['Conversion Rate'],
+                    item['Successes'],
+                    item['Population']
+                ])
+            
+            ranking_table = Table(ranking_data)
+            ranking_table.setStyle(TableStyle([
+                ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
+                ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+                ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+                ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+                ('FONTSIZE', (0, 0), (-1, 0), 10),
+                ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+                ('BACKGROUND', (0, 1), (-1, -1), colors.beige),
+                ('FONTSIZE', (0, 1), (-1, -1), 9),
+                ('GRID', (0, 0), (-1, -1), 1, colors.black)
+            ]))
+            
+            story.append(ranking_table)
+            story.append(Spacer(1, 15))
+        
+        # Pairwise comparisons
+        story.append(Paragraph("Pairwise Statistical Comparisons:", styles['Heading3']))
+        
+        if 'pairwise_comparisons' in metric_results:
+            comparison_data = [['Comparison', 'Group 1 Rate', 'Group 2 Rate', 'P-value', 'Significant', 'Lift %', 'Result']]
+            
+            for comp in metric_results['pairwise_comparisons']:
+                comparison_data.append([
+                    comp['Comparison'],
+                    comp['Group 1 Rate'],
+                    comp['Group 2 Rate'],
+                    comp['P-value'],
+                    'Yes' if comp['Significant'] else 'No',
+                    comp['Lift %'],
+                    comp['Result']
+                ])
+            
+            comparison_table = Table(comparison_data)
+            comparison_table.setStyle(TableStyle([
+                ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
+                ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+                ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+                ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+                ('FONTSIZE', (0, 0), (-1, 0), 9),
+                ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+                ('BACKGROUND', (0, 1), (-1, -1), colors.beige),
+                ('FONTSIZE', (0, 1), (-1, -1), 8),
+                ('GRID', (0, 0), (-1, -1), 1, colors.black)
+            ]))
+            
+            story.append(comparison_table)
+    
+    # Build PDF
+    doc.build(story)
+    buffer.seek(0)
+    return buffer
+
 st.title("🧪 A/B Testing Statistical Analysis")
-st.write("Upload your experiment data and run statistical tests between groups. Currently only works for binary values (e.g. converted or not, clicked a tile or not, etc. and not continuous variables such as spend.")
+st.write("Upload your experiment data and run statistical tests between groups")
 
 # File uploader
 uploaded_file = st.file_uploader(
@@ -99,10 +267,15 @@ if uploaded_file is not None:
             
             # Store all pairwise results for CSV export
             all_pairwise_results = []
+            # Store structured results for PDF export
+            analysis_results = {}
             
             if len(df) >= 2:
                 for metric in metric_columns:
                     st.write(f"**Analysis for: {metric}**")
+                    
+                    # Initialize results structure for this metric
+                    analysis_results[metric] = {}
                     
                     # Prepare data for statistical tests
                     groups_data = []
@@ -183,6 +356,9 @@ if uploaded_file is not None:
                                 comparison_results.append(comparison_result)
                                 all_pairwise_results.append(comparison_result)
                     
+                    # Store pairwise comparisons for PDF
+                    analysis_results[metric]['pairwise_comparisons'] = comparison_results
+                    
                     # Winner announcement - only if there are significant differences
                     if has_significant_difference:
                         # Check if the best performing group actually wins any significant comparisons
@@ -190,6 +366,8 @@ if uploaded_file is not None:
                         
                         if winner_has_significant_wins:
                             st.success(f"🏆 **WINNER: {potential_winner}** with {winner_rate*100:.2f}% conversion rate")
+                            analysis_results[metric]['winner'] = potential_winner
+                            analysis_results[metric]['winner_rate'] = winner_rate
                         else:
                             # Find who actually has the most significant wins
                             from collections import Counter
@@ -198,6 +376,8 @@ if uploaded_file is not None:
                                 actual_winner = win_counts.most_common(1)[0][0]
                                 actual_winner_rate = group_rates[group_names.index(actual_winner)]
                                 st.success(f"🏆 **WINNER: {actual_winner}** with {actual_winner_rate:.4f} ({actual_winner_rate*100:.2f}%) conversion rate")
+                                analysis_results[metric]['winner'] = actual_winner
+                                analysis_results[metric]['winner_rate'] = actual_winner_rate
                             else:
                                 st.info("📊 **NO CLEAR WINNER** - No statistically significant differences found")
                     else:
@@ -224,6 +404,9 @@ if uploaded_file is not None:
                         if has_significant_difference and item['Group'] in significant_wins:
                             if i == 0:  # Top performer with significant wins
                                 item['Rank'] = "🏆 1"
+                    
+                    # Store group summary for PDF
+                    analysis_results[metric]['group_summary'] = rates_summary
                     
                     summary_df = pd.DataFrame(rates_summary)
                     st.dataframe(summary_df, use_container_width=True)
@@ -321,6 +504,22 @@ if uploaded_file is not None:
                 else:
                     st.info("No pairwise comparisons available for download")
             
+            with col2:
+                # PDF Report download
+                try:
+                    pdf_buffer = create_pdf_report(df, analysis_results, metric_columns, pop_size_column, group_id_column, alpha)
+                    
+                    st.download_button(
+                        label="📄 Download Complete PDF Report",
+                        data=pdf_buffer,
+                        file_name=f"ab_test_analysis_report_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf",
+                        mime="application/pdf"
+                    )
+                    
+                except Exception as e:
+                    st.error(f"Error generating PDF: {str(e)}")
+                    st.info("To use PDF export, install reportlab: pip install reportlab")
+            
     except Exception as e:
         st.error(f"❌ Error processing the file: {str(e)}")
         st.write("Please ensure your CSV file is properly formatted with numeric data.")
@@ -350,7 +549,7 @@ else:
         3. Select the column containing population size
         4. Select the metric columns you want to analyze
         5. Review statistical test results
-        6. Download analysis report
+        6. Download analysis report (CSV or PDF)
         
         **Statistical Tests:**
         - 2 groups: Two-proportion Z-test
@@ -360,4 +559,9 @@ else:
         - A winner is only declared if there are statistically significant differences
         - The winner must have significant wins in pairwise comparisons
         - If no significant differences are found, no winner is declared
+        
+        **Requirements for PDF Export:**
+        ```bash
+        pip install reportlab
+        ```
         """)
