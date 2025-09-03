@@ -27,7 +27,7 @@ if uploaded_file is not None:
         # Read the CSV file
         df = pd.read_csv(uploaded_file)
         
-        st.success(f"✅ File uploaded! {df.shape[0]} experiment groups, {df.shape[1]} columns")
+        st.success(f"✅ File uploaded: {df.shape[0]} experiment groups, {df.shape[1]} columns")
         
         # Show data preview
         with st.expander("📊 Data Preview"):
@@ -172,8 +172,8 @@ if uploaded_file is not None:
                                 comparison_result = {
                                     'Metric': metric,
                                     'Comparison': f"{group1_name} vs {group2_name}",
-                                    'Group 1 Rate': f"{p1:.4f} ({p1*100:.2f}%)",
-                                    'Group 2 Rate': f"{p2:.4f} ({p2*100:.2f}%)",
+                                    'Group 1 Rate': f"{p1*100:.2f}%",
+                                    'Group 2 Rate': f"{p2*100:.2f}%",
                                     'P-value': f"{p_value:.6f}",
                                     'Significant': is_significant,
                                     'Lift %': f"{lift:.2f}%",
@@ -211,7 +211,6 @@ if uploaded_file is not None:
                             'Rank': i + 1,
                             'Group': group_name,
                             'Conversion Rate': f"{rate:.4f}",
-                            'Percentage': f"{rate*100:.2f}%",
                             'Successes / Population': f"{successes} / {population}"
                         })
                     
@@ -226,7 +225,7 @@ if uploaded_file is not None:
                                 item['Rank'] = "🏆 1"
                     
                     summary_df = pd.DataFrame(rates_summary)
-                    st.dataframe(summary_df, use_container_width=True)
+                    st.dataframe(summary_df, use_container_width=False)
                     
                     # Pairwise comparisons
                     st.write("**Pairwise Statistical Comparisons:**")
