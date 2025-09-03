@@ -106,7 +106,7 @@ def create_html_report(analysis_results, metric_columns, df, group_id_column, po
             <h1>🧪 A/B Testing Statistical Analysis Report</h1>
             <p>Generated on: {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}</p>
         </div>
-        
+
         <div class="printButton" onClick={window.print()}>
             Print Me!
         </div>
@@ -508,8 +508,7 @@ if uploaded_file is not None:
                         group_id_column, 
                         pop_size_column, 
                         alpha, 
-                        use_fdr,
-                        custom_title
+                        use_fdr
                     )
                     
                     # Create download button for HTML (which can be printed to PDF)
@@ -538,6 +537,13 @@ if uploaded_file is not None:
                            - Check "Background graphics" to preserve colors
                            - Choose "More settings" → "Paper size" → A4 or Letter
                         6. **Click "Save"** to generate your PDF
+                        
+                        The HTML report includes:
+                        - 📊 All statistical analysis results
+                        - 📈 Interactive charts (static in PDF)
+                        - 🏆 Winner declarations
+                        - 📋 Configuration details
+                        - 🔢 Detailed comparison tables
                         """)
                 else:
                     st.info("Complete your analysis first to enable PDF export")
