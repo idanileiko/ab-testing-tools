@@ -271,16 +271,20 @@ if uploaded_file is not None:
                     fig.update_traces(
                         texttemplate='%{text:.3f}', 
                         textposition='outside',
-                        textfont_size=12
+                        textfont_size=12,
+                        marker_color='#636EFA'  # Use a single color for all bars
                     )
                     
                     fig.update_layout(
                         yaxis_title="Conversion Rate",
                         xaxis_title="Experiment Group",
-                        title_x=0.5,  # Center the title
-                        showlegend=False,  # Hide color scale legend
+                        title={
+                            'text': f'Conversion Rates by Group - {metric}',
+                            'x': 0.5,
+                            'xanchor': 'center'
+                        },
                         height=400,  # Set a reasonable height
-                        margin=dict(l=50, r=50, t=60, b=50)
+                        margin=dict(l=50, r=50, t=80, b=50)  # Increased top margin for better title spacing
                     )
                     
                     # Display the chart in a container for better width control
