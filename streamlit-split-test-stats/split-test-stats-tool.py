@@ -245,7 +245,7 @@ if uploaded_file is not None:
                     
                     viz_df = pd.DataFrame(viz_data)
                     
-                    # Create a more aesthetically pleasing bar chart
+                    # Create a bar chart
                     fig = px.bar(
                         viz_df, 
                         x='Group', 
@@ -270,9 +270,13 @@ if uploaded_file is not None:
                             'x': 0.5,
                             'xanchor': 'center'
                         },
-                        height=400,  # Set a reasonable height
-                        margin=dict(l=50, r=50, t=80, b=50)  # Increased top margin for better title spacing
+                        height=450,  # Increased height to accommodate labels
+                        margin=dict(l=50, r=50, t=100, b=50)  # Increased top margin for labels
                     )
+                    
+                    # Ensure y-axis has enough room for text labels above bars
+                    max_rate = viz_df['Conversion_Rate'].max()
+                    fig.update_yaxes(range=[0, max_rate * 1.15])  # Add 15% padding above highest bar
                     
                     # Display the chart in a container for better width control
                     chart_col1, chart_col2, chart_col3 = st.columns([1, 3, 1])
