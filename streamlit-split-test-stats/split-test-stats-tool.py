@@ -120,38 +120,8 @@ if uploaded_file is not None:
                     best_group_idx = np.argmax(group_rates)
                     winner = group_names[best_group_idx]
                     winner_rate = group_rates[best_group_idx]
-                    
-                    # Winner announcement
-                    st.success(f"🏆 **WINNER: {winner}** with {winner_rate*100:.2f}% conversion rate")
 
-                    # Overall summary for this metric
-                    rates_summary = []
-                    for i, (group_name, rate) in enumerate(zip(group_names, group_rates)):
-                        successes, population = groups_data[i]
-                        rates_summary.append({
-                            'Rank': i + 1 if group_name != winner else "🏆 1",
-                            'Group': group_name,
-                            'Conversion Rate': f"{rate*100:.2f}%",
-                            'Successes / Population': f"{successes} / {population}"
-                        })
-                    
-                    # Sort by rate descending
-                    rates_summary.sort(key=lambda x: float(x['Conversion Rate']), reverse=True)
-                    
-                    # Update ranks
-                    for i, item in enumerate(rates_summary):
-                        if not str(item['Rank']).startswith('🏆'):
-                            item['Rank'] = i + 1
-                    
-                    summary_df = pd.DataFrame(rates_summary)
-                    st.dataframe(summary_df, use_container_width=True)
-                    
-                    # Pairwise comparisons
-                    st.write("**Pairwise Statistical Comparisons:**")
-                    
-                    comparison_results = []
-                    significant_wins = []
-                    
+                    # Run stats test
                     for i in range(len(groups_data)):
                         for j in range(i + 1, len(groups_data)):
                             group1_name = group_names[i]
@@ -200,6 +170,38 @@ if uploaded_file is not None:
                                     'Lift %': f"{lift:.2f}%",
                                     'Result': status
                                 })
+                    
+                    # Winner announcement
+                    st.success(f"🏆 **WINNER: {winner}** with {winner_rate:.4f} ({winner_rate*100:.2f}%) conversion rate")
+
+                    # Overall summary for this metric
+                    rates_summary = []
+                    for i, (group_name, rate) in enumerate(zip(group_names, group_rates)):
+                        successes, population = groups_data[i]
+                        rates_summary.append({
+                            'Rank': i + 1 if group_name != winner else "🏆 1",
+                            'Group': group_name,
+                            'Conversion Rate': f"{rate:.4f}",
+                            'Percentage': f"{rate*100:.2f}%",
+                            'Successes / Population': f"{successes} / {population}"
+                        })
+                    
+                    # Sort by rate descending
+                    rates_summary.sort(key=lambda x: float(x['Conversion Rate']), reverse=True)
+                    
+                    # Update ranks
+                    for i, item in enumerate(rates_summary):
+                        if not str(item['Rank']).startswith('🏆'):
+                            item['Rank'] = i + 1
+                    
+                    summary_df = pd.DataFrame(rates_summary)
+                    st.dataframe(summary_df, use_container_width=True)
+                    
+                    # Pairwise comparisons
+                    st.write("**Pairwise Statistical Comparisons:**")
+                    
+                    comparison_results = []
+                    significant_wins = []
                     
                     # Display comparison results
                     if comparison_results:
@@ -272,154 +274,6 @@ if uploaded_file is not None:
                     file_name="ab_test_analysis.csv",
                     mime="text/csv"
                 )
-            
-            with col2:
-                # Generate PDF Report
-                if st.button("📄 Generate PDF Report"):
-                    
-                    # Create PDF content as HTML (since we can't use reportlab)
-                    html_content = f"""
-                    <!DOCTYPE html>
-                    <html>
-                    <head>
-                        <title>A/B Testing Analysis Report</title>
-                        <style>
-                            body {{ font-family: Arial, sans-serif; margin: 40px; }}
-                            h1 {{ color: #1f77b4; border-bottom: 2px solid #1f77b4; }}
-                            h2 {{ color: #333; margin-top: 30px; }}
-                            .winner {{ background-color: #d4edda; padding: 15px; border-radius: 5px; margin: 10px 0; }}
-                            .metric-section {{ margin: 20px 0; border: 1px solid #ddd; padding: 15px; }}
-                            table {{ border-collapse: collapse; width: 100%; margin: 10px 0; }}
-                            th, td {{ border: 1px solid #ddd; padding: 8px; text-align: left; }}
-                            th {{ background-color: #f2f2f2; }}
-                            .significant {{ background-color: #d1ecf1; }}
-                            .not-significant {{ background-color: #f8d7da; }}
-                        </style>
-                    </head>
-                    <body>
-                        <h1>🧪 A/B Testing Analysis Report</h1>
-                        <p><strong>Generated:</strong> {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}</p>
-                        <p><strong>File:</strong> {uploaded_file.name}</p>
-                        <p><strong>Total Groups:</strong> {len(df)}</p>
-                        <p><strong>Significance Level:</strong> {alpha}</p>
-                    """
-                    
-                    # Add analysis for each metric
-                    for metric in metric_columns:
-                        # Recalculate for PDF
-                        groups_data = []
-                        group_names = []
-                        group_rates = []
-                        
-                        for i, row in df.iterrows():
-                            group_name = row[group_id_column] if group_id_column else f"Group_{i+1}"
-                            successes = int(row[metric])
-                            population = int(row[pop_size_column])
-                            rate = successes / population
-                            
-                            groups_data.append((successes, population))
-                            group_names.append(group_name)
-                            group_rates.append(rate)
-                        
-                        best_group_idx = np.argmax(group_rates)
-                        winner = group_names[best_group_idx]
-                        winner_rate = group_rates[best_group_idx]
-                        
-                        html_content += f"""
-                        <div class="metric-section">
-                            <h2>📊 Analysis for: {metric}</h2>
-                            <div class="winner">
-                                <strong>🏆 WINNER: {winner}</strong><br>
-                                Conversion Rate: {winner_rate:.4f} ({winner_rate*100:.2f}%)
-                            </div>
-                            
-                            <h3>Group Performance Summary</h3>
-                            <table>
-                                <tr>
-                                    <th>Rank</th>
-                                    <th>Group</th>
-                                    <th>Conversion Rate</th>
-                                    <th>Count/Population</th>
-                                </tr>
-                        """
-                        
-                        # Add sorted group data
-                        sorted_groups = sorted(
-                            zip(group_names, group_rates, groups_data), 
-                            key=lambda x: x[1], 
-                            reverse=True
-                        )
-                        
-                        for rank, (name, rate, (successes, population)) in enumerate(sorted_groups, 1):
-                            winner_badge = "🏆 " if name == winner else ""
-                            html_content += f"""
-                                <tr>
-                                    <td>{winner_badge}{rank}</td>
-                                    <td>{name}</td>
-                                    <td>{rate:.4f} ({rate*100:.2f}%)</td>
-                                    <td>{successes:,}/{population:,}</td>
-                                </tr>
-                            """
-                        
-                        html_content += """
-                            </table>
-                            
-                            <h3>Pairwise Statistical Comparisons</h3>
-                            <table>
-                                <tr>
-                                    <th>Comparison</th>
-                                    <th>Group 1 Rate</th>
-                                    <th>Group 2 Rate</th>
-                                    <th>P-value</th>
-                                    <th>Lift %</th>
-                                    <th>Result</th>
-                                </tr>
-                        """
-                        
-                                # Add pairwise comparisons to PDF with FDR
-                        for idx, detail in enumerate(comparison_details):
-                            is_significant_uncorrected = detail['p_value'] < alpha
-                            is_significant_corrected = fdr_significant[idx] if use_fdr else is_significant_uncorrected
-                            
-                            row_class = "significant" if is_significant_corrected else "not-significant"
-                            
-                            if is_significant_corrected:
-                                result = f"{detail['comparison_winner']} WINS"
-                            else:
-                                result = "No significant difference"
-                            
-                            html_content += f"""
-                                <tr class="{row_class}">
-                                    <td>{detail['comparison']}</td>
-                                    <td>{detail['p1']:.4f} ({detail['p1']*100:.2f}%)</td>
-                                    <td>{detail['p2']:.4f} ({detail['p2']*100:.2f}%)</td>
-                                    <td>{detail['p_value']:.6f}</td>
-                                    <td>{detail['lift']:.2f}%</td>
-                                    <td>{"Yes" if is_significant_corrected else "No"}</td>
-                                    <td>{result}</td>
-                                </tr>
-                            """
-                        
-                        html_content += """
-                            </table>
-                        </div>
-                        """
-                    
-                    html_content += """
-                        </body>
-                    </html>
-                    """
-                    
-                    # Convert HTML to bytes for download
-                    html_bytes = html_content.encode('utf-8')
-                    
-                    st.download_button(
-                        label="📄 Download PDF Report (HTML)",
-                        data=html_bytes,
-                        file_name=f"ab_test_report_{pd.Timestamp.now().strftime('%Y%m%d_%H%M%S')}.html",
-                        mime="text/html",
-                        help="Download as HTML file - you can print to PDF from your browser"
-                    )
             
     except Exception as e:
         st.error(f"❌ Error processing the file: {str(e)}")
