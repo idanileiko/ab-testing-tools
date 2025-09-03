@@ -264,9 +264,7 @@ if uploaded_file is not None:
                         x='Group', 
                         y='Conversion_Rate',
                         title=f'Conversion Rates by Group - {metric}',
-                        text='Conversion_Rate',
-                        color='Conversion_Rate',
-                        color_continuous_scale='viridis'
+                        text='Conversion_Rate'
                     )
                     
                     # Improve the chart appearance
