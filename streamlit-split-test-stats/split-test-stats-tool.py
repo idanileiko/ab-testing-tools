@@ -44,8 +44,8 @@ if uploaded_file is not None:
         with col1:
             # Group identifier (optional)
             group_id_column = st.selectbox(
-                "Select group identifier column (optional):",
-                [None] + columns,
+                "Select group identifier column:",
+                columns,
                 help="Column that identifies each experiment group (e.g., 'control', 'variant_a')"
             )
 
