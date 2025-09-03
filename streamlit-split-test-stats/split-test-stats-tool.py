@@ -46,6 +46,7 @@ if uploaded_file is not None:
             group_id_column = st.selectbox(
                 "Select group identifier column:",
                 columns,
+                index=None,
                 help="Column that identifies each experiment group (e.g., 'control', 'variant_a')"
             )
 
@@ -53,6 +54,7 @@ if uploaded_file is not None:
             pop_size_column = st.selectbox(
                 "Select the population size column:",
                 columns,
+                index=None,
                 help="Column containing the total number of users in each experiment group"
             )
         
