@@ -97,6 +97,9 @@ if uploaded_file is not None:
             # Statistical Tests
             st.subheader("🔬 Statistical Test Results")
             
+            # Store all pairwise results for CSV export
+            all_pairwise_results = []
+            
             if len(df) >= 2:
                 for metric in metric_columns:
                     st.write(f"**Analysis for: {metric}**")
@@ -118,12 +121,13 @@ if uploaded_file is not None:
                     
                     # Find the best performing group
                     best_group_idx = np.argmax(group_rates)
-                    winner = group_names[best_group_idx]
+                    potential_winner = group_names[best_group_idx]
                     winner_rate = group_rates[best_group_idx]
 
                     # Run stats test
                     comparison_results = []
                     significant_wins = []
+                    has_significant_difference = False
                     
                     for i in range(len(groups_data)):
                         for j in range(i + 1, len(groups_data)):
@@ -156,6 +160,7 @@ if uploaded_file is not None:
                                 is_significant = p_value < alpha
                                 
                                 if is_significant:
+                                    has_significant_difference = True
                                     significant_wins.append(comparison_winner)
                                 
                                 # Status determination
@@ -164,7 +169,8 @@ if uploaded_file is not None:
                                 else:
                                     status = "No significant difference"
                                 
-                                comparison_results.append({
+                                comparison_result = {
+                                    'Metric': metric,
                                     'Comparison': f"{group1_name} vs {group2_name}",
                                     'Group 1 Rate': f"{p1:.4f} ({p1*100:.2f}%)",
                                     'Group 2 Rate': f"{p2:.4f} ({p2*100:.2f}%)",
@@ -172,17 +178,37 @@ if uploaded_file is not None:
                                     'Significant': is_significant,
                                     'Lift %': f"{lift:.2f}%",
                                     'Result': status
-                                })
+                                }
+                                
+                                comparison_results.append(comparison_result)
+                                all_pairwise_results.append(comparison_result)
                     
-                    # Winner announcement
-                    st.success(f"🏆 **WINNER: {winner}** with {winner_rate:.4f} ({winner_rate*100:.2f}%) conversion rate")
+                    # Winner announcement - only if there are significant differences
+                    if has_significant_difference:
+                        # Check if the best performing group actually wins any significant comparisons
+                        winner_has_significant_wins = potential_winner in significant_wins
+                        
+                        if winner_has_significant_wins:
+                            st.success(f"🏆 **WINNER: {potential_winner}** with {winner_rate:.4f} ({winner_rate*100:.2f}%) conversion rate")
+                        else:
+                            # Find who actually has the most significant wins
+                            from collections import Counter
+                            win_counts = Counter(significant_wins)
+                            if win_counts:
+                                actual_winner = win_counts.most_common(1)[0][0]
+                                actual_winner_rate = group_rates[group_names.index(actual_winner)]
+                                st.success(f"🏆 **WINNER: {actual_winner}** with {actual_winner_rate:.4f} ({actual_winner_rate*100:.2f}%) conversion rate")
+                            else:
+                                st.info("📊 **NO CLEAR WINNER** - No statistically significant differences found")
+                    else:
+                        st.info("📊 **NO CLEAR WINNER** - No statistically significant differences found")
 
                     # Overall summary for this metric
                     rates_summary = []
                     for i, (group_name, rate) in enumerate(zip(group_names, group_rates)):
                         successes, population = groups_data[i]
                         rates_summary.append({
-                            'Rank': i + 1 if group_name != winner else "🏆 1",
+                            'Rank': i + 1,
                             'Group': group_name,
                             'Conversion Rate': f"{rate:.4f}",
                             'Percentage': f"{rate*100:.2f}%",
@@ -192,10 +218,12 @@ if uploaded_file is not None:
                     # Sort by rate descending
                     rates_summary.sort(key=lambda x: float(x['Conversion Rate']), reverse=True)
                     
-                    # Update ranks
+                    # Update ranks and highlight winner if there is one
                     for i, item in enumerate(rates_summary):
-                        if not str(item['Rank']).startswith('🏆'):
-                            item['Rank'] = i + 1
+                        item['Rank'] = i + 1
+                        if has_significant_difference and item['Group'] in significant_wins:
+                            if i == 0:  # Top performer with significant wins
+                                item['Rank'] = "🏆 1"
                     
                     summary_df = pd.DataFrame(rates_summary)
                     st.dataframe(summary_df, use_container_width=True)
@@ -206,7 +234,9 @@ if uploaded_file is not None:
                     # Display comparison results
                     if comparison_results:
                         comparison_df = pd.DataFrame(comparison_results)
-                        st.dataframe(comparison_df, use_container_width=True)
+                        # Remove the 'Metric' column for display (we'll keep it for export)
+                        display_df = comparison_df.drop('Metric', axis=1)
+                        st.dataframe(display_df, use_container_width=True)
                     
                     # Visualization
                     st.subheader("📈 Visualization")
@@ -225,17 +255,37 @@ if uploaded_file is not None:
                     
                     viz_df = pd.DataFrame(viz_data)
                     
-                    # Bar chart of conversion rates
+                    # Create a more aesthetically pleasing bar chart
                     fig = px.bar(
                         viz_df, 
                         x='Group', 
                         y='Conversion_Rate',
                         title=f'Conversion Rates by Group - {metric}',
-                        text='Conversion_Rate'
+                        text='Conversion_Rate',
+                        color='Conversion_Rate',
+                        color_continuous_scale='viridis'
                     )
-                    fig.update_traces(texttemplate='%{text:.3f}', textposition='outside')
-                    fig.update_layout(yaxis_title="Conversion Rate")
-                    st.plotly_chart(fig, use_container_width=False)
+                    
+                    # Improve the chart appearance
+                    fig.update_traces(
+                        texttemplate='%{text:.3f}', 
+                        textposition='outside',
+                        textfont_size=12
+                    )
+                    
+                    fig.update_layout(
+                        yaxis_title="Conversion Rate",
+                        xaxis_title="Experiment Group",
+                        title_x=0.5,  # Center the title
+                        showlegend=False,  # Hide color scale legend
+                        height=400,  # Set a reasonable height
+                        margin=dict(l=50, r=50, t=60, b=50)
+                    )
+                    
+                    # Display the chart in a container for better width control
+                    chart_col1, chart_col2, chart_col3 = st.columns([1, 3, 1])
+                    with chart_col2:
+                        st.plotly_chart(fig, use_container_width=True)
                     
                     st.divider()
             
@@ -249,31 +299,19 @@ if uploaded_file is not None:
             col1, col2 = st.columns(2)
             
             with col1:
-                # Create downloadable CSV report
-                report_data = []
-                for metric in metric_columns:
-                    for i, row in df.iterrows():
-                        group_name = row[group_id_column] if group_id_column else f"Group_{i+1}"
-                        rate = row[metric] / row[pop_size_column]
-                        
-                        report_data.append({
-                            'Metric': metric,
-                            'Group': group_name,
-                            'Count': row[metric],
-                            'Population': row[pop_size_column],
-                            'Conversion_Rate': rate,
-                            'Conversion_Rate_Percent': f"{rate*100:.2f}%"
-                        })
-                
-                report_df = pd.DataFrame(report_data)
-                csv_report = report_df.to_csv(index=False)
-                
-                st.download_button(
-                    label="📊 Download CSV Report",
-                    data=csv_report,
-                    file_name="ab_test_analysis.csv",
-                    mime="text/csv"
-                )
+                # Create downloadable CSV report with pairwise comparisons
+                if all_pairwise_results:
+                    pairwise_df = pd.DataFrame(all_pairwise_results)
+                    csv_report = pairwise_df.to_csv(index=False)
+                    
+                    st.download_button(
+                        label="📊 Download Pairwise Analysis CSV",
+                        data=csv_report,
+                        file_name="ab_test_pairwise_analysis.csv",
+                        mime="text/csv"
+                    )
+                else:
+                    st.info("No pairwise comparisons available for download")
             
     except Exception as e:
         st.error(f"❌ Error processing the file: {str(e)}")
@@ -309,4 +347,9 @@ else:
         **Statistical Tests:**
         - 2 groups: Two-proportion Z-test
         - 3+ groups: Chi-square test of independence
+        
+        **Winner Declaration:**
+        - A winner is only declared if there are statistically significant differences
+        - The winner must have significant wins in pairwise comparisons
+        - If no significant differences are found, no winner is declared
         """)
