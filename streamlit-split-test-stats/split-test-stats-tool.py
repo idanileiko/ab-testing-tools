@@ -73,6 +73,13 @@ if uploaded_file is not None:
                 step=0.01,
                 help="Threshold for statistical significance"
             )
+            
+            # FDR correction option
+            use_fdr = st.checkbox(
+                "Apply FDR (False Discovery Rate) correction",
+                value=True,
+                help="Benjamini-Hochberg procedure - less conservative than Bonferroni while controlling false discoveries"
+            )
         
         if metric_columns:
             st.subheader("📈 Statistical Analysis Results")
@@ -196,25 +203,6 @@ if uploaded_file is not None:
                         comparison_df = pd.DataFrame(comparison_results)
                         st.dataframe(comparison_df, use_container_width=True)
                         
-                        # Overall winner summary
-                        st.write("**🏁 Final Verdict:**")
-                        
-                        if significant_wins:
-                            # Count wins for each group
-                            win_counts = {}
-                            for win in significant_wins:
-                                win_counts[win] = win_counts.get(win, 0) + 1
-                            
-                            # Find group with most significant wins
-                            statistical_winner = max(win_counts, key=win_counts.get)
-                            
-                            if statistical_winner == winner:
-                                st.success(f"🎉 **{winner}** is both the highest performer AND has statistically significant wins!")
-                            else:
-                                st.warning(f"⚠️ **{winner}** has the highest rate, but **{statistical_winner}** has the most statistically significant wins")
-                        else:
-                            st.info(f"📊 **{winner}** has the highest conversion rate, but no statistically significant differences found")
-                    
                     # Overall summary for this metric
                     rates_summary = []
                     for i, (group_name, rate) in enumerate(zip(group_names, group_rates)):
