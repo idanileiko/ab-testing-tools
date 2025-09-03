@@ -189,7 +189,7 @@ if uploaded_file is not None:
                         winner_has_significant_wins = potential_winner in significant_wins
                         
                         if winner_has_significant_wins:
-                            st.success(f"🏆 **WINNER: {potential_winner}** with {winner_rate:.4f} ({winner_rate*100:.2f}%) conversion rate")
+                            st.success(f"🏆 **WINNER: {potential_winner}** with {winner_rate*100:.2f}% conversion rate")
                         else:
                             # Find who actually has the most significant wins
                             from collections import Counter
