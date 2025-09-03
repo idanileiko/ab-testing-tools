@@ -4,13 +4,9 @@ import numpy as np
 from scipy import stats
 import plotly.express as px
 import plotly.graph_objects as go
-from reportlab.lib.pagesizes import letter, A4
-from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, PageBreak
-from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
-from reportlab.lib.units import inch
-from reportlab.lib import colors
-import io
-from datetime import datetime
+import base64
+from io import BytesIO
+import datetime
 
 # Set page configuration
 st.set_page_config(
@@ -19,169 +15,153 @@ st.set_page_config(
     layout="wide"
 )
 
-def create_pdf_report(df, analysis_results, metric_columns, pop_size_column, group_id_column, alpha):
-    """Create a comprehensive PDF report of the A/B test analysis"""
-    buffer = io.BytesIO()
-    doc = SimpleDocTemplate(buffer, pagesize=A4)
-    styles = getSampleStyleSheet()
-    story = []
-    
-    # Custom styles
-    title_style = ParagraphStyle(
-        'CustomTitle',
-        parent=styles['Heading1'],
-        fontSize=18,
-        spaceAfter=30,
-        alignment=1  # Center alignment
-    )
-    
-    heading_style = ParagraphStyle(
-        'CustomHeading',
-        parent=styles['Heading2'],
-        fontSize=14,
-        spaceAfter=12,
-        spaceBefore=12
-    )
-    
-    # Title
-    story.append(Paragraph("🧪 A/B Testing Statistical Analysis Report", title_style))
-    story.append(Spacer(1, 12))
-    
-    # Report metadata
-    report_date = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    story.append(Paragraph(f"<b>Report Generated:</b> {report_date}", styles['Normal']))
-    story.append(Paragraph(f"<b>Total Groups:</b> {len(df)}", styles['Normal']))
-    story.append(Paragraph(f"<b>Metrics Analyzed:</b> {', '.join(metric_columns)}", styles['Normal']))
-    story.append(Paragraph(f"<b>Significance Level:</b> {alpha}", styles['Normal']))
-    story.append(Spacer(1, 20))
-    
-    # Data Overview
-    story.append(Paragraph("Data Overview", heading_style))
-    
-    # Create overview table
-    overview_data = [['Group', 'Population Size'] + [f'{metric}' for metric in metric_columns] + [f'{metric} Rate' for metric in metric_columns]]
-    
-    for i, row in df.iterrows():
-        group_name = row[group_id_column] if group_id_column else f"Group_{i+1}"
-        population = int(row[pop_size_column])
-        row_data = [group_name, f"{population:,}"]
-        
-        # Add metric counts
-        for metric in metric_columns:
-            row_data.append(f"{int(row[metric]):,}")
-        
-        # Add metric rates
-        for metric in metric_columns:
-            rate = row[metric] / population
-            row_data.append(f"{rate:.4f} ({rate*100:.2f}%)")
-        
-        overview_data.append(row_data)
-    
-    # Create and style the overview table
-    overview_table = Table(overview_data)
-    overview_table.setStyle(TableStyle([
-        ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
-        ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
-        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
-        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
-        ('FONTSIZE', (0, 0), (-1, 0), 10),
-        ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
-        ('BACKGROUND', (0, 1), (-1, -1), colors.beige),
-        ('FONTSIZE', (0, 1), (-1, -1), 9),
-        ('GRID', (0, 0), (-1, -1), 1, colors.black)
-    ]))
-    
-    story.append(overview_table)
-    story.append(Spacer(1, 20))
-    
-    # Statistical Analysis Results
-    for metric_idx, metric in enumerate(metric_columns):
-        if metric_idx > 0:
-            story.append(PageBreak())
-        
-        story.append(Paragraph(f"Statistical Analysis: {metric}", heading_style))
-        
-        # Get results for this metric
-        metric_results = analysis_results.get(metric, {})
-        
-        # Winner announcement
-        if 'winner' in metric_results:
-            winner_text = f"🏆 WINNER: {metric_results['winner']} with {metric_results['winner_rate']:.4f} ({metric_results['winner_rate']*100:.2f}%) conversion rate"
-            story.append(Paragraph(winner_text, styles['Normal']))
-        else:
-            story.append(Paragraph("📊 NO CLEAR WINNER - No statistically significant differences found", styles['Normal']))
-        
-        story.append(Spacer(1, 12))
-        
-        # Group performance ranking
-        story.append(Paragraph("Group Performance Ranking:", styles['Heading3']))
-        
-        if 'group_summary' in metric_results:
-            ranking_data = [['Rank', 'Group', 'Conversion Rate', 'Successes', 'Population']]
-            for item in metric_results['group_summary']:
-                ranking_data.append([
-                    str(item['Rank']),
-                    item['Group'],
-                    item['Conversion Rate'],
-                    item['Successes'],
-                    item['Population']
-                ])
-            
-            ranking_table = Table(ranking_data)
-            ranking_table.setStyle(TableStyle([
-                ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
-                ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
-                ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
-                ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
-                ('FONTSIZE', (0, 0), (-1, 0), 10),
-                ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
-                ('BACKGROUND', (0, 1), (-1, -1), colors.beige),
-                ('FONTSIZE', (0, 1), (-1, -1), 9),
-                ('GRID', (0, 0), (-1, -1), 1, colors.black)
-            ]))
-            
-            story.append(ranking_table)
-            story.append(Spacer(1, 15))
-        
-        # Pairwise comparisons
-        story.append(Paragraph("Pairwise Statistical Comparisons:", styles['Heading3']))
-        
-        if 'pairwise_comparisons' in metric_results:
-            comparison_data = [['Comparison', 'Group 1 Rate', 'Group 2 Rate', 'P-value', 'Significant', 'Lift %', 'Result']]
-            
-            for comp in metric_results['pairwise_comparisons']:
-                comparison_data.append([
-                    comp['Comparison'],
-                    comp['Group 1 Rate'],
-                    comp['Group 2 Rate'],
-                    comp['P-value'],
-                    'Yes' if comp['Significant'] else 'No',
-                    comp['Lift %'],
-                    comp['Result']
-                ])
-            
-            comparison_table = Table(comparison_data)
-            comparison_table.setStyle(TableStyle([
-                ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
-                ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
-                ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
-                ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
-                ('FONTSIZE', (0, 0), (-1, 0), 9),
-                ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
-                ('BACKGROUND', (0, 1), (-1, -1), colors.beige),
-                ('FONTSIZE', (0, 1), (-1, -1), 8),
-                ('GRID', (0, 0), (-1, -1), 1, colors.black)
-            ]))
-            
-            story.append(comparison_table)
-    
-    # Build PDF
-    doc.build(story)
-    buffer.seek(0)
-    return buffer
-
 st.title("🧪 A/B Testing Statistical Analysis")
 st.write("Upload your experiment data and run statistical tests between groups")
+
+# PDF Export Functions
+def create_html_report(analysis_results, metric_columns, df, group_id_column, pop_size_column, alpha, use_fdr):
+    """Create HTML report with all analysis results"""
+    
+    html_content = f"""
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <meta charset="utf-8">
+        <title>A/B Testing Analysis Report</title>
+        <style>
+            body {{
+                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica', 'Arial', sans-serif;
+                line-height: 1.6;
+                color: #333;
+                max-width: 1200px;
+                margin: 0 auto;
+                padding: 20px;
+            }}
+            .header {{
+                text-align: center;
+                border-bottom: 2px solid #4CAF50;
+                padding-bottom: 20px;
+                margin-bottom: 30px;
+            }}
+            .metric-section {{
+                margin-bottom: 40px;
+                border: 1px solid #e0e0e0;
+                border-radius: 8px;
+                padding: 20px;
+            }}
+            .winner-box {{
+                background-color: #d4edda;
+                border: 1px solid #c3e6cb;
+                color: #155724;
+                padding: 15px;
+                border-radius: 5px;
+                margin: 15px 0;
+                font-weight: bold;
+            }}
+            .no-winner-box {{
+                background-color: #d1ecf1;
+                border: 1px solid #bee5eb;
+                color: #0c5460;
+                padding: 15px;
+                border-radius: 5px;
+                margin: 15px 0;
+                font-weight: bold;
+            }}
+            table {{
+                width: 100%;
+                border-collapse: collapse;
+                margin: 15px 0;
+            }}
+            th, td {{
+                border: 1px solid #ddd;
+                padding: 12px;
+                text-align: left;
+            }}
+            th {{
+                background-color: #f2f2f2;
+                font-weight: bold;
+            }}
+            .chart-container {{
+                text-align: center;
+                margin: 20px 0;
+            }}
+            .config-info {{
+                background-color: #f8f9fa;
+                padding: 15px;
+                border-radius: 5px;
+                margin-bottom: 20px;
+            }}
+            .significant {{
+                background-color: #d4edda;
+                color: #155724;
+            }}
+            .not-significant {{
+                background-color: #f8d7da;
+                color: #721c24;
+            }}
+        </style>
+    </head>
+    <body>
+        <div class="header">
+            <h1>🧪 A/B Testing Statistical Analysis Report</h1>
+            <p>Generated on: {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}</p>
+        </div>
+        
+        <div class="config-info">
+            <h3>📋 Analysis Configuration</h3>
+            <p><strong>Significance Level (α):</strong> {alpha}</p>
+            <p><strong>FDR Correction Applied:</strong> {'Yes' if use_fdr else 'No'}</p>
+            <p><strong>Population Size Column:</strong> {pop_size_column}</p>
+            <p><strong>Group ID Column:</strong> {group_id_column if group_id_column else 'Auto-generated'}</p>
+            <p><strong>Metrics Analyzed:</strong> {', '.join(metric_columns)}</p>
+        </div>
+    """
+    
+    # Add results for each metric
+    for metric_data in analysis_results:
+        metric = metric_data['metric']
+        winner_info = metric_data['winner_info']
+        summary_df = metric_data['summary_df']
+        comparison_df = metric_data['comparison_df']
+        chart_html = metric_data['chart_html']
+        
+        html_content += f"""
+        <div class="metric-section">
+            <h2>📊 Analysis for: {metric}</h2>
+            
+            {winner_info}
+            
+            <h3>🏆 Group Performance Summary</h3>
+            {summary_df.to_html(classes='', table_id='', escape=False)}
+            
+            <div class="chart-container">
+                <h3>📈 Conversion Rate Visualization</h3>
+                {chart_html}
+            </div>
+            
+            <h3>🔬 Pairwise Statistical Comparisons</h3>
+            {comparison_df.to_html(classes='', table_id='', escape=False)}
+        </div>
+        """
+    
+    html_content += """
+    </body>
+    </html>
+    """
+    
+    return html_content
+
+def convert_html_to_pdf_ready(html_content):
+    """Convert HTML to a format ready for PDF conversion using weasyprint-like approach"""
+    # For now, we'll return the HTML that can be saved and manually converted
+    # In a full deployment, you'd want to use weasyprint or similar
+    return html_content
+
+def create_download_link(html_content, filename):
+    """Create download link for HTML file"""
+    b64 = base64.b64encode(html_content.encode()).decode()
+    href = f'<a href="data:text/html;base64,{b64}" download="{filename}">📄 Download HTML Report (can be printed to PDF)</a>'
+    return href
 
 # File uploader
 uploaded_file = st.file_uploader(
@@ -267,15 +247,12 @@ if uploaded_file is not None:
             
             # Store all pairwise results for CSV export
             all_pairwise_results = []
-            # Store structured results for PDF export
-            analysis_results = {}
+            # Store results for PDF export
+            pdf_analysis_results = []
             
             if len(df) >= 2:
                 for metric in metric_columns:
                     st.write(f"**Analysis for: {metric}**")
-                    
-                    # Initialize results structure for this metric
-                    analysis_results[metric] = {}
                     
                     # Prepare data for statistical tests
                     groups_data = []
@@ -356,18 +333,16 @@ if uploaded_file is not None:
                                 comparison_results.append(comparison_result)
                                 all_pairwise_results.append(comparison_result)
                     
-                    # Store pairwise comparisons for PDF
-                    analysis_results[metric]['pairwise_comparisons'] = comparison_results
-                    
                     # Winner announcement - only if there are significant differences
+                    winner_html = ""
                     if has_significant_difference:
                         # Check if the best performing group actually wins any significant comparisons
                         winner_has_significant_wins = potential_winner in significant_wins
                         
                         if winner_has_significant_wins:
-                            st.success(f"🏆 **WINNER: {potential_winner}** with {winner_rate*100:.2f}% conversion rate")
-                            analysis_results[metric]['winner'] = potential_winner
-                            analysis_results[metric]['winner_rate'] = winner_rate
+                            winner_message = f"🏆 **WINNER: {potential_winner}** with {winner_rate*100:.2f}% conversion rate"
+                            st.success(winner_message)
+                            winner_html = f'<div class="winner-box">🏆 WINNER: {potential_winner} with {winner_rate*100:.2f}% conversion rate</div>'
                         else:
                             # Find who actually has the most significant wins
                             from collections import Counter
@@ -375,13 +350,17 @@ if uploaded_file is not None:
                             if win_counts:
                                 actual_winner = win_counts.most_common(1)[0][0]
                                 actual_winner_rate = group_rates[group_names.index(actual_winner)]
-                                st.success(f"🏆 **WINNER: {actual_winner}** with {actual_winner_rate:.4f} ({actual_winner_rate*100:.2f}%) conversion rate")
-                                analysis_results[metric]['winner'] = actual_winner
-                                analysis_results[metric]['winner_rate'] = actual_winner_rate
+                                winner_message = f"🏆 **WINNER: {actual_winner}** with {actual_winner_rate:.4f} ({actual_winner_rate*100:.2f}%) conversion rate"
+                                st.success(winner_message)
+                                winner_html = f'<div class="winner-box">🏆 WINNER: {actual_winner} with {actual_winner_rate*100:.2f}% conversion rate</div>'
                             else:
-                                st.info("📊 **NO CLEAR WINNER** - No statistically significant differences found")
+                                winner_message = "📊 **NO CLEAR WINNER** - No statistically significant differences found"
+                                st.info(winner_message)
+                                winner_html = f'<div class="no-winner-box">📊 NO CLEAR WINNER - No statistically significant differences found</div>'
                     else:
-                        st.info("📊 **NO CLEAR WINNER** - No statistically significant differences found")
+                        winner_message = "📊 **NO CLEAR WINNER** - No statistically significant differences found"
+                        st.info(winner_message)
+                        winner_html = f'<div class="no-winner-box">📊 NO CLEAR WINNER - No statistically significant differences found</div>'
 
                     # Overall summary for this metric
                     rates_summary = []
@@ -404,9 +383,6 @@ if uploaded_file is not None:
                         if has_significant_difference and item['Group'] in significant_wins:
                             if i == 0:  # Top performer with significant wins
                                 item['Rank'] = "🏆 1"
-                    
-                    # Store group summary for PDF
-                    analysis_results[metric]['group_summary'] = rates_summary
                     
                     summary_df = pd.DataFrame(rates_summary)
                     st.dataframe(summary_df, use_container_width=True)
@@ -466,17 +442,30 @@ if uploaded_file is not None:
                     with chart_col2:
                         st.plotly_chart(fig, use_container_width=True)
                     
+                    # Convert chart to HTML for PDF
+                    chart_html = fig.to_html(include_plotlyjs='cdn', div_id=f"chart_{metric}")
+                    
                     # Pairwise comparisons
                     st.write("**Pairwise Statistical Comparisons:**")
                     
+                    comparison_df_display = None
                     if comparison_results:
                         comparison_df = pd.DataFrame(comparison_results)
                         # Sort by lift percentage (descending)
                         comparison_df['Lift_Numeric'] = comparison_df['Lift %'].str.replace('%', '').astype(float)
                         comparison_df = comparison_df.sort_values('Lift_Numeric', ascending=False)
                         # Remove the 'Metric' column and helper column for display (we'll keep Metric for export)
-                        display_df = comparison_df.drop(['Metric', 'Lift_Numeric'], axis=1)
-                        st.dataframe(display_df, use_container_width=True)
+                        comparison_df_display = comparison_df.drop(['Metric', 'Lift_Numeric'], axis=1)
+                        st.dataframe(comparison_df_display, use_container_width=True)
+
+                    # Store results for PDF export
+                    pdf_analysis_results.append({
+                        'metric': metric,
+                        'winner_info': winner_html,
+                        'summary_df': summary_df,
+                        'comparison_df': comparison_df_display if comparison_df_display is not None else pd.DataFrame(),
+                        'chart_html': chart_html
+                    })
 
                     st.divider()
             
@@ -505,21 +494,56 @@ if uploaded_file is not None:
                     st.info("No pairwise comparisons available for download")
             
             with col2:
-                # PDF Report download
-                try:
-                    pdf_buffer = create_pdf_report(df, analysis_results, metric_columns, pop_size_column, group_id_column, alpha)
-                    
-                    st.download_button(
-                        label="📄 Download Complete PDF Report",
-                        data=pdf_buffer,
-                        file_name=f"ab_test_analysis_report_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf",
-                        mime="application/pdf"
+                # PDF Export option
+                if pdf_analysis_results:
+                    # Create HTML report
+                    html_report = create_html_report(
+                        pdf_analysis_results, 
+                        metric_columns, 
+                        df, 
+                        group_id_column, 
+                        pop_size_column, 
+                        alpha, 
+                        use_fdr
                     )
                     
-                except Exception as e:
-                    st.error(f"Error generating PDF: {str(e)}")
-                    st.info("To use PDF export, install reportlab: pip install reportlab")
-            
+                    # Create download button for HTML (which can be printed to PDF)
+                    timestamp = datetime.datetime.now().strftime('%Y%m%d_%H%M%S')
+                    filename = f"ab_test_report_{timestamp}.html"
+                    
+                    st.download_button(
+                        label="📄 Download Complete Report (HTML)",
+                        data=html_report,
+                        file_name=filename,
+                        mime="text/html",
+                        help="Download HTML report that can be printed to PDF from your browser (Ctrl+P → Save as PDF)"
+                    )
+                    
+                    # Instructions for PDF conversion
+                    with st.expander("📋 How to convert HTML to PDF"):
+                        st.markdown("""
+                        **To convert the downloaded HTML report to PDF:**
+                        
+                        1. **Download the HTML file** using the button above
+                        2. **Open the HTML file** in your web browser (Chrome, Firefox, Safari, etc.)
+                        3. **Print the page** (Ctrl+P or Cmd+P)
+                        4. **Select "Save as PDF"** as the destination
+                        5. **Adjust print settings** if needed:
+                           - Set margins to "Minimum" for better chart display
+                           - Check "Background graphics" to preserve colors
+                           - Choose "More settings" → "Paper size" → A4 or Letter
+                        6. **Click "Save"** to generate your PDF
+                        
+                        The HTML report includes:
+                        - 📊 All statistical analysis results
+                        - 📈 Interactive charts (static in PDF)
+                        - 🏆 Winner declarations
+                        - 📋 Configuration details
+                        - 🔢 Detailed comparison tables
+                        """)
+                else:
+                    st.info("Complete your analysis first to enable PDF export")
+        
     except Exception as e:
         st.error(f"❌ Error processing the file: {str(e)}")
         st.write("Please ensure your CSV file is properly formatted with numeric data.")
@@ -549,7 +573,7 @@ else:
         3. Select the column containing population size
         4. Select the metric columns you want to analyze
         5. Review statistical test results
-        6. Download analysis report (CSV or PDF)
+        6. Download analysis report (CSV or HTML/PDF)
         
         **Statistical Tests:**
         - 2 groups: Two-proportion Z-test
@@ -560,8 +584,7 @@ else:
         - The winner must have significant wins in pairwise comparisons
         - If no significant differences are found, no winner is declared
         
-        **Requirements for PDF Export:**
-        ```bash
-        pip install reportlab
-        ```
+        **Export Options:**
+        - **CSV**: Raw statistical comparison data for further analysis
+        - **HTML/PDF**: Complete formatted report with charts and analysis
         """)
