@@ -138,21 +138,20 @@ def create_html_report(analysis_results, metric_columns, df, group_id_column, po
             <h4>🔬 Pairwise Statistical Comparisons</h4>
             {comparison_df.to_html(classes='', table_id='', escape=False)}
         </div>
-
-        <hr>
-
-        <div class="config-info">
-            <h3>📋 Analysis Configuration</h3>
-            <p><strong>Significance Level (α):</strong> {alpha}</p>
-            <p><strong>FDR Correction Applied:</strong> {'Yes' if use_fdr else 'No'}</p>
-            <p><strong>Population Size Column:</strong> {pop_size_column}</p>
-            <p><strong>Group ID Column:</strong> {group_id_column if group_id_column else 'Auto-generated'}</p>
-            <p><strong>Metrics Analyzed:</strong> {', '.join(metric_columns)}</p>
-        </div>
-        
         """
     
     html_content += """
+
+    <hr>
+
+    <div class="config-info">
+        <h3>📋 Analysis Configuration</h3>
+        <p><strong>Significance Level (α):</strong> {alpha}</p>
+        <p><strong>FDR Correction Applied:</strong> {'Yes' if use_fdr else 'No'}</p>
+        <p><strong>Population Size Column:</strong> {pop_size_column}</p>
+        <p><strong>Group ID Column:</strong> {group_id_column if group_id_column else 'Auto-generated'}</p>
+        <p><strong>Metrics Analyzed:</strong> {', '.join(metric_columns)}</p>
+    </div>
     </body>
     </html>
     """
