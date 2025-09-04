@@ -120,7 +120,7 @@ def create_html_report(analysis_results, metric_columns, df, group_id_column, po
      # Executive summary section
     html_content += """
     <div class="metric-section">
-        <h3>📋 Executive Summary - Winners by Metric</h3>
+        <h3>📋 Summary - Winners by Metric</h3>
         <table>
             <thead>
                 <tr>
