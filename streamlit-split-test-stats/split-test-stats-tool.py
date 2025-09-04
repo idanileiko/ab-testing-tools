@@ -94,6 +94,9 @@ def create_html_report(analysis_results, metric_columns, df, group_id_column, po
                 padding: 15px;
                 border-radius: 5px;
                 margin-bottom: 20px;
+            }}
+            .config-wrapper {{
+                padding-top: 15px;
                 border-top: 2px solid #4CAF50;
             }}
             .significant {{
@@ -142,7 +145,8 @@ def create_html_report(analysis_results, metric_columns, df, group_id_column, po
         """
     
     html_content += """
-    
+
+    <div class='config-wrapper'>
     <div class="config-info">
         <h3>📋 Analysis Configuration</h3>
         <p><strong>Significance Level (α):</strong> {alpha}</p>
@@ -150,6 +154,7 @@ def create_html_report(analysis_results, metric_columns, df, group_id_column, po
         <p><strong>Population Size Column:</strong> {pop_size_column}</p>
         <p><strong>Group ID Column:</strong> {group_id_column if group_id_column else 'Auto-generated'}</p>
         <p><strong>Metrics Analyzed:</strong> {', '.join(metric_columns)}</p>
+    </div>
     </div>
     </body>
     </html>
