@@ -116,8 +116,60 @@ def create_html_report(analysis_results, metric_columns, df, group_id_column, po
             <p>Generated on: {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}</p>
         </div>
     """
+
+     # Executive summary section
+    html_content += """
+    <div class="metric-section">
+        <h3>📋 Executive Summary - Winners by Metric</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>Metric</th>
+                    <th>Winner</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+    """
+
+    # Extract winner information for each metric
+    for metric_data in analysis_results:
+        metric = metric_data['metric']
+        winner_info_html = metric_data['winner_info']
+        
+        # Parse the winner from the HTML string
+        if 'WINNER:' in winner_info_html:
+            # Extract winner name from the HTML
+            import re
+            winner_match = re.search(r'WINNER: ([^<]+?) with', winner_info_html)
+            if winner_match:
+                winner = winner_match.group(1).strip()
+                status_class = "significant"
+                status = "Significant Winner"
+            else:
+                winner = "Not determined"
+                status_class = "not-significant"
+                status = "No Clear Winner"
+        else:
+            winner = "No significant difference"
+            status_class = "not-significant" 
+            status = "No Clear Winner"
+        
+        html_content += f"""
+                <tr class="{status_class}">
+                    <td><strong>{metric}</strong></td>
+                    <td>{winner}</td>
+                    <td>{status}</td>
+                </tr>
+        """
     
-    # Add results for each metric
+    html_content += """
+            </tbody>
+        </table>
+    </div>
+    """
+    
+    # Results for each metric
     for metric_data in analysis_results:
         metric = metric_data['metric']
         winner_info = metric_data['winner_info']
