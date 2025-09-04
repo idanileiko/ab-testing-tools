@@ -575,7 +575,7 @@ if uploaded_file is not None:
                     
                     # Create download button for HTML (which can be printed to PDF)
                     timestamp = datetime.datetime.now().strftime('%Y%m%d_%H%M%S')
-                    filename = f"ab_test_report_{timestamp}.html"
+                    filename = f"{csv_filename}_{timestamp}.html"
                     
                     st.download_button(
                         label="📄 Download Complete Report (HTML)",
