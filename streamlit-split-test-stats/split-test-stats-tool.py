@@ -408,7 +408,7 @@ if uploaded_file is not None:
                         if winner_has_significant_wins:
                             winner_message = f"🏆 **WINNER: {potential_winner}** with {winner_rate*100:.2f}% conversion rate"
                             st.success(winner_message)
-                            winner_html = f'<div class="winner-box">🏆 WINNER: {potential_winner} with {winner_rate*100:.2f}% conversion rate</div>'
+                            winner_html = f'<div class="winner-box">WINNER: {potential_winner} with {winner_rate*100:.2f}% conversion rate</div>'
                         else:
                             # Find who actually has the most significant wins
                             from collections import Counter
@@ -422,11 +422,11 @@ if uploaded_file is not None:
                             else:
                                 winner_message = "📊 **NO CLEAR WINNER** - No statistically significant differences found"
                                 st.info(winner_message)
-                                winner_html = f'<div class="no-winner-box">📊 NO CLEAR WINNER - No statistically significant differences found</div>'
+                                winner_html = f'<div class="no-winner-box">NO CLEAR WINNER - No statistically significant differences found</div>'
                     else:
                         winner_message = "📊 **NO CLEAR WINNER** - No statistically significant differences found"
                         st.info(winner_message)
-                        winner_html = f'<div class="no-winner-box">📊 NO CLEAR WINNER - No statistically significant differences found</div>'
+                        winner_html = f'<div class="no-winner-box">NO CLEAR WINNER - No statistically significant differences found</div>'
 
                     # Overall summary for this metric
                     rates_summary = []
