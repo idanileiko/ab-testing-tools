@@ -135,6 +135,8 @@ def create_html_report(analysis_results, metric_columns, df, group_id_column, po
             {comparison_df.to_html(classes='', table_id='', escape=False)}
         </div>
 
+        <hr>
+
         <div class="config-info">
             <h3>📋 Analysis Configuration</h3>
             <p><strong>Significance Level (α):</strong> {alpha}</p>
