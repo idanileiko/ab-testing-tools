@@ -501,14 +501,14 @@ if uploaded_file is not None:
                     
                     # Create HTML report
                     html_report = create_html_report(
-                        analysis_results=pdf_analysis_results, 
-                        metric_columns=metric_columns, 
-                        df=df, 
-                        group_id_column=group_id_column, 
-                        pop_size_column=pop_size_column, 
-                        alpha=alpha, 
-                        use_fdr=use_fdr,
-                        file_name=csv_filename
+                        pdf_analysis_results, 
+                        metric_columns, 
+                        df, 
+                        group_id_column, 
+                        pop_size_column, 
+                        alpha, 
+                        use_fdr,
+                        csv_filename
                     )
                     
                     # Create download button for HTML (which can be printed to PDF)
