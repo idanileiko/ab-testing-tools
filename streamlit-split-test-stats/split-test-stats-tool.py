@@ -418,7 +418,7 @@ if uploaded_file is not None:
                                 actual_winner_rate = group_rates[group_names.index(actual_winner)]
                                 winner_message = f"🏆 **WINNER: {actual_winner}** with {actual_winner_rate:.4f} ({actual_winner_rate*100:.2f}%) conversion rate"
                                 st.success(winner_message)
-                                winner_html = f'<div class="winner-box">🏆 WINNER: {actual_winner} with {actual_winner_rate*100:.2f}% conversion rate</div>'
+                                winner_html = f'<div class="winner-box">WINNER: {actual_winner} with {actual_winner_rate*100:.2f}% conversion rate</div>'
                             else:
                                 winner_message = "📊 **NO CLEAR WINNER** - No statistically significant differences found"
                                 st.info(winner_message)
