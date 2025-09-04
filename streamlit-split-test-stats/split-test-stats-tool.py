@@ -496,16 +496,19 @@ if uploaded_file is not None:
             with col2:
                 # PDF Export option
                 if pdf_analysis_results:
+                    # Get the CSV filename for the report title
+                    csv_filename = uploaded_file.name
+                    
                     # Create HTML report
                     html_report = create_html_report(
-                        pdf_analysis_results, 
-                        metric_columns, 
-                        df, 
-                        group_id_column, 
-                        pop_size_column, 
-                        alpha, 
-                        use_fdr,
-                        uploaded_file.name
+                        analysis_results=pdf_analysis_results, 
+                        metric_columns=metric_columns, 
+                        df=df, 
+                        group_id_column=group_id_column, 
+                        pop_size_column=pop_size_column, 
+                        alpha=alpha, 
+                        use_fdr=use_fdr,
+                        file_name=csv_filename
                     )
                     
                     # Create download button for HTML (which can be printed to PDF)
