@@ -126,6 +126,7 @@ def create_html_report(analysis_results, metric_columns, df, group_id_column, po
                 <tr>
                     <th>Metric</th>
                     <th>Winner</th>
+                    <th>Conversion Rate</th>
                     <th>Status</th>
                 </tr>
             </thead>
@@ -137,13 +138,15 @@ def create_html_report(analysis_results, metric_columns, df, group_id_column, po
         metric = metric_data['metric']
         winner_info_html = metric_data['winner_info']
         
-        # Parse the winner from the HTML string
+        # Parse the winner and conversion rate from the HTML string
+        conversion_rate = "N/A"
         if 'WINNER:' in winner_info_html:
-            # Extract winner name from the HTML
+            # Extract winner name and conversion rate from the HTML
             import re
-            winner_match = re.search(r'WINNER: ([^<]+?) with', winner_info_html)
+            winner_match = re.search(r'WINNER: ([^<]+?) with ([0-9.]+)% conversion rate', winner_info_html)
             if winner_match:
                 winner = winner_match.group(1).strip()
+                conversion_rate = winner_match.group(2) + "%"
                 status_class = "significant"
                 status = "Significant Winner"
             else:
@@ -159,6 +162,7 @@ def create_html_report(analysis_results, metric_columns, df, group_id_column, po
                 <tr class="{status_class}">
                     <td><strong>{metric}</strong></td>
                     <td>{winner}</td>
+                    <td>{conversion_rate}</td>
                     <td>{status}</td>
                 </tr>
         """
