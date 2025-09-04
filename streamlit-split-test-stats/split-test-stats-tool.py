@@ -96,7 +96,7 @@ def create_html_report(analysis_results, metric_columns, df, group_id_column, po
                 margin-bottom: 20px;
             }}
             .config-wrapper {{
-                padding-top: 20px;
+                padding-top: 30px;
                 border-top: 2px solid #4CAF50;
             }}
             .significant {{
