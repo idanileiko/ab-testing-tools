@@ -122,7 +122,7 @@ def create_html_report(analysis_results, metric_columns, df, group_id_column, po
         
         html_content += f"""
         <div class="metric-section">
-            <h2>📊 Analysis for: {metric}</h2>
+            <h2>📊 Analysis: {metric}</h2>
             
             {winner_info}
             
