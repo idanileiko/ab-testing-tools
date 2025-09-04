@@ -43,6 +43,9 @@ def create_html_report(analysis_results, metric_columns, df, group_id_column, po
                 padding-bottom: 20px;
                 margin-bottom: 30px;
             }}
+            h2 {{
+                text-transform: capitalize;
+            }}
             .metric-section {{
                 margin-bottom: 40px;
                 border: 1px solid #e0e0e0;
