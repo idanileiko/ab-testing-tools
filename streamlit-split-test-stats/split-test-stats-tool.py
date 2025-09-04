@@ -144,7 +144,7 @@ def create_html_report(analysis_results, metric_columns, df, group_id_column, po
         </div>
         """
     
-    html_content += """
+    html_content += f"""
     <div class="config-wrapper">
     <div class="config-info">
         <h3>📋 Analysis Configuration</h3>
