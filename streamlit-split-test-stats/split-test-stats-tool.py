@@ -94,6 +94,7 @@ def create_html_report(analysis_results, metric_columns, df, group_id_column, po
                 padding: 15px;
                 border-radius: 5px;
                 margin-bottom: 20px;
+                border-top: 2px solid #4CAF50;
             }}
             .significant {{
                 background-color: #d4edda;
