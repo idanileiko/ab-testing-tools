@@ -106,10 +106,6 @@ def create_html_report(analysis_results, metric_columns, df, group_id_column, po
             <h1>🧪 A/B Testing Statistical Analysis Report</h1>
             <p>Generated on: {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}</p>
         </div>
-
-        <div class="printButton" onClick={window.print()}>
-            Print Me!
-        </div>
         
         <div class="config-info">
             <h3>📋 Analysis Configuration</h3>
