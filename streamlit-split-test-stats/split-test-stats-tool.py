@@ -43,7 +43,7 @@ def create_html_report(analysis_results, metric_columns, df, group_id_column, po
                 padding-bottom: 20px;
                 margin-bottom: 30px;
             }}
-            h2 {{
+            h3 {{
                 text-transform: capitalize;
             }}
             .metric-section {{
@@ -87,6 +87,7 @@ def create_html_report(analysis_results, metric_columns, df, group_id_column, po
             .chart-container {{
                 text-align: center;
                 margin: 20px 0;
+                & h4 {{text-align:left;}}
             }}
             .config-info {{
                 background-color: #f8f9fa;
@@ -122,19 +123,19 @@ def create_html_report(analysis_results, metric_columns, df, group_id_column, po
         
         html_content += f"""
         <div class="metric-section">
-            <h2>📊 Analysis: {metric}</h2>
+            <h3>📊 Analysis: {metric}</h3>
             
             {winner_info}
             
-            <h3>🏆 Group Performance Summary</h3>
+            <h4>🏆 Group Performance Summary</h4>
             {summary_df.to_html(classes='', table_id='', escape=False)}
             
             <div class="chart-container">
-                <h3>📈 Conversion Rate Visualization</h3>
+                <h4>📈 Conversion Rate Visualization</h4>
                 {chart_html}
             </div>
             
-            <h3>🔬 Pairwise Statistical Comparisons</h3>
+            <h4>🔬 Pairwise Statistical Comparisons</h4>
             {comparison_df.to_html(classes='', table_id='', escape=False)}
         </div>
 
