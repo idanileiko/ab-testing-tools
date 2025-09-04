@@ -27,7 +27,7 @@ def create_html_report(analysis_results, metric_columns, df, group_id_column, po
     <html>
     <head>
         <meta charset="utf-8">
-        <title>A/B Testing Analysis Report</title>
+        <title>A/B Testing Analysis</title>
         <style>
             body {{
                 font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica', 'Arial', sans-serif;
@@ -96,7 +96,7 @@ def create_html_report(analysis_results, metric_columns, df, group_id_column, po
                 margin-bottom: 20px;
             }}
             .config-wrapper {{
-                margin-top: 20px;
+                padding-top: 20px;
                 border-top: 2px solid #4CAF50;
             }}
             .significant {{
@@ -111,7 +111,7 @@ def create_html_report(analysis_results, metric_columns, df, group_id_column, po
     </head>
     <body>
         <div class="header">
-            <h1>🧪 A/B Testing Statistical Analysis Report</h1>
+            <h1>🧪 A/B Testing Statistical Analysis</h1>
             <h2>{csv_filename.split('.')[0]}</h2>
             <p>Generated on: {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}</p>
         </div>
@@ -599,13 +599,6 @@ if uploaded_file is not None:
                            - Check "Background graphics" to preserve colors
                            - Choose "More settings" → "Paper size" → A4 or Letter
                         6. **Click "Save"** to generate your PDF
-                        
-                        The HTML report includes:
-                        - 📊 All statistical analysis results
-                        - 📈 Interactive charts (static in PDF)
-                        - 🏆 Winner declarations
-                        - 📋 Configuration details
-                        - 🔢 Detailed comparison tables
                         """)
                 else:
                     st.info("Complete your analysis first to enable PDF export")
