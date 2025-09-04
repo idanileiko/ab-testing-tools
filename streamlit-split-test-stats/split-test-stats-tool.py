@@ -19,7 +19,7 @@ st.title("🧪 A/B Testing Statistical Analysis")
 st.write("Upload your experiment data and run statistical tests between groups")
 
 # PDF Export Functions
-def create_html_report(analysis_results, metric_columns, df, group_id_column, pop_size_column, alpha, use_fdr):
+def create_html_report(analysis_results, metric_columns, df, group_id_column, pop_size_column, alpha, use_fdr, csv_filename):
     """Create HTML report with all analysis results"""
     
     html_content = f"""
@@ -104,6 +104,7 @@ def create_html_report(analysis_results, metric_columns, df, group_id_column, po
     <body>
         <div class="header">
             <h1>🧪 A/B Testing Statistical Analysis Report</h1>
+            <h2>{csv_filename}</h2>
             <p>Generated on: {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}</p>
         </div>
         
