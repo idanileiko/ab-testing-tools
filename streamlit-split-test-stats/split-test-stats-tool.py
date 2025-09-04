@@ -504,7 +504,8 @@ if uploaded_file is not None:
                         group_id_column, 
                         pop_size_column, 
                         alpha, 
-                        use_fdr
+                        use_fdr,
+                        custom_title
                     )
                     
                     # Create download button for HTML (which can be printed to PDF)
