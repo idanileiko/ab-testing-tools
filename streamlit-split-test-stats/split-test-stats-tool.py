@@ -15,3 +15,5 @@ st.markdown(
     **Select a page from the sidebar** that fits your stats use-case!
 """
 )
+
+st.write(st.__version__)
