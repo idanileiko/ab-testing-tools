@@ -1,4 +1,5 @@
 import streamlit as st
+import os
 
 # Set page configuration
 st.set_page_config(
@@ -16,4 +17,11 @@ st.markdown(
 """
 )
 
-st.write(st.__version__)
+st.write("Current working directory:", os.getcwd())
+st.write("Files in current directory:", os.listdir())
+
+if os.path.exists("pages"):
+    st.write("Pages folder exists!")
+    st.write("Files in pages folder:", os.listdir("pages"))
+else:
+    st.write("Pages folder NOT found")
